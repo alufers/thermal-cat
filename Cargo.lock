@@ -2147,6 +2147,7 @@ dependencies = [
  "egui_extras",
  "env_logger",
  "nokhwa",
+ "once_cell",
  "winit 0.29.4",
 ]
 

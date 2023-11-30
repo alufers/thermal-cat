@@ -1,11 +1,15 @@
-use std::{mem, sync::{mpsc, Arc}, thread};
 
-use eframe::epaint::ColorImage;
+use std::{
+    mem,
+    ops::Index,
+    sync::{mpsc, Arc},
+    thread,
+};
+
+use eframe::epaint::{Color32, ColorImage, Pos2, Rect};
 use nokhwa::{pixel_format::RgbFormat, Camera};
 
-
-
-
+use crate::thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENT_DEFAULT};
 
 pub struct ThermalCapturerResult {
     pub image: ColorImage,
@@ -52,23 +56,38 @@ impl ThermalCapturer {
         let mut ctx = mem::replace(&mut self.ctx, None).unwrap();
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
+
+           
             let mut last_frame_time = std::time::Instant::now();
             loop {
                 last_frame_time = std::time::Instant::now();
                 let frame = ctx.camera.frame().unwrap();
-                println!("frame_format {:?}", frame.source_frame_format());
-                let decoded = frame.decode_image::<RgbFormat>().unwrap();
-                let image = ColorImage::from_rgb(
-                    [decoded.width() as usize, decoded.height() as usize],
-                    decoded.as_raw(),
-                );
-                (ctx.callback)(
-                    ThermalCapturerResult {
-                        image,
-                        real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
-                        reported_fps: ctx.camera.frame_rate() as f32,
-                    }
-                );
+
+                let frame_data = frame.buffer();
+
+                let thermal_data_buf = &frame_data[256 * 192 * 2..];
+
+                let thermal_data = unsafe {
+                    std::slice::from_raw_parts(thermal_data_buf.as_ptr() as *const u16, 256 * 192)
+                };
+
+                let mut color_image_pixels = vec![Color32::default(); 256 * 192];
+
+                for (i, pixel) in thermal_data.iter().enumerate() {
+                   
+                    color_image_pixels[i] = THERMAL_GRADIENT_DEFAULT.get_color((*pixel as f32) / 64.0 - 273.15);
+                }
+
+                let image = ColorImage {
+                    pixels: color_image_pixels,
+                    size: [256, 192],
+                };
+
+                (ctx.callback)(ThermalCapturerResult {
+                    image,
+                    real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
+                    reported_fps: ctx.camera.frame_rate() as f32,
+                });
                 match ctx.cmd_reader.try_recv() {
                     Ok(cmd) => match cmd {
                         ThermalCapturerCmd::Stop => {
@@ -78,7 +97,6 @@ impl ThermalCapturer {
                     },
                     Err(_) => {}
                 }
-                
             }
         });
     }

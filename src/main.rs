@@ -10,8 +10,12 @@ use nokhwa::{
 
 use eframe::{egui::{self, Id}, epaint::{ColorImage, Vec2}};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
+use thermal_gradient::THERMAL_GRADIENT_DEFAULT;
 
 mod thermal_capturer;
+mod thermal_gradient;
+
+
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
@@ -42,6 +46,8 @@ struct ThermalViewerApp {
     preview_zoom: f32,
     camera_texture: Option<egui::TextureHandle>,
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
+
+    gradient_texture: Option<egui::TextureHandle>,
 }
 
 impl ThermalViewerApp {
@@ -64,16 +70,25 @@ impl Default for ThermalViewerApp {
             open_camera_error: None,
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
+            gradient_texture: None,
         }
     }
 }
 
 impl eframe::App for ThermalViewerApp {
     fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
+        if self.gradient_texture.is_none() {
+            
+            let gradient_image = THERMAL_GRADIENT_DEFAULT.create_demo_image(256, 32);
+            self.gradient_texture = Some(
+                ctx.load_texture("gradient", gradient_image, Default::default())
+            );
+        }
         egui::SidePanel::new(egui::panel::Side::Left, Id::new("left_sidepanel")).show(ctx, |ui| {
             ui.heading("Open Thermal Viewer");
-
-            egui::ComboBox::from_label("Camera")
+            ui.separator();
+            ui.label("Select Camera:");
+            egui::ComboBox::from_label("")
                 .selected_text(format!(
                     "#{} - {}",
                     self.selected_camera_index,
@@ -92,14 +107,12 @@ impl eframe::App for ThermalViewerApp {
                     });
                 });
 
-            if let Some(error) = &self.open_camera_error {
-                ui.colored_label(egui::Color32::RED, error);
-            }
+            
             if self.thermal_capturer_inst.is_none() {
                 if ui.button("Open Camera").clicked() {
                     // todo: do something
                     let requested = RequestedFormat::new::<RgbFormat>(
-                        RequestedFormatType::Closest(CameraFormat::new(Resolution::new(256, 192), FrameFormat::YUYV, 25))
+                        RequestedFormatType::Closest(CameraFormat::new(Resolution::new(256, 192 * 2), FrameFormat::YUYV, 25))
                     );
                     let cloned_ctx = ctx.clone();
                     let mut cloned_incoming_image = self.incoming_image.clone();
@@ -126,6 +139,31 @@ impl eframe::App for ThermalViewerApp {
                     self.thermal_capturer_inst = None;
                 }
             }
+
+            if let Some(error) = &self.open_camera_error {
+                ui.colored_label(egui::Color32::RED, error);
+            }
+
+            ui.separator();
+            ui.label("Select gradient");
+            egui::Grid::new("gradient_grid")
+                .num_columns(2)
+                .spacing([10.0, 10.0])
+                .striped(true)
+                .show(ui, |ui| {
+                    ui.radio(true, "Gradient 1");
+                    ui.image(self.gradient_texture.as_ref().unwrap());
+                    ui.end_row();
+                    ui.radio(true, "Gradient 1");
+                    ui.label("Gradient 1");
+                    ui.end_row();
+                    ui.radio(true, "Gradient 1");
+                    ui.label("Gradient 1");
+                    ui.end_row();
+                    
+                });
+
+
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {

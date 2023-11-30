@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use nokhwa::{
     native_api_backend,
     pixel_format::RgbFormat,
@@ -6,7 +8,8 @@ use nokhwa::{
     Camera,
 };
 
-use eframe::egui::{self, Id};
+use eframe::{egui::{self, Id}, epaint::{ColorImage, Vec2}};
+use thermal_capturer::ThermalCapturer;
 
 mod thermal_capturer;
 fn main() -> Result<(), eframe::Error> {
@@ -30,9 +33,13 @@ fn main() -> Result<(), eframe::Error> {
 struct ThermalViewerApp {
     cameras: Vec<CameraInfo>,
     selected_camera_index: CameraIndex,
-    opened_camera: Option<Camera>,
 
+    thermal_capturer_inst: Option<ThermalCapturer>,
+
+    
+    preview_zoom: f32,
     camera_texture: Option<egui::TextureHandle>,
+    incoming_image: Arc<Mutex<Option<ColorImage>>>,
 }
 
 impl ThermalViewerApp {
@@ -50,14 +57,16 @@ impl Default for ThermalViewerApp {
         Self {
             cameras: query(backend).unwrap(),
             selected_camera_index: CameraIndex::Index(0),
-            opened_camera: None,
+            thermal_capturer_inst: None,
             camera_texture: None,
+            incoming_image: Arc::new(Mutex::new(None)),
+            preview_zoom: 1.0,
         }
     }
 }
 
 impl eframe::App for ThermalViewerApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
         egui::SidePanel::new(egui::panel::Side::Left, Id::new("left_sidepanel")).show(ctx, |ui| {
             ui.heading("Open Thermal Viewer");
 
@@ -79,46 +88,50 @@ impl eframe::App for ThermalViewerApp {
                         );
                     });
                 });
-            if self.opened_camera.is_none() {
+            if self.thermal_capturer_inst.is_none() {
                 if ui.button("Open Camera").clicked() {
                     // todo: do something
                     let requested = RequestedFormat::new::<RgbFormat>(
                         RequestedFormatType::AbsoluteHighestResolution,
                     );
-                    self.opened_camera =
-                        Some(Camera::new(self.selected_camera_index.clone(), requested).unwrap());
-                    self.opened_camera.as_mut().unwrap().open_stream().unwrap();
+                    let cam = Camera::new(self.selected_camera_index.clone(), requested).unwrap();
+                    let cloned_ctx = ctx.clone();
+                    let mut cloned_incoming_image = self.incoming_image.clone();
+                    self.thermal_capturer_inst = Some(ThermalCapturer::new(cam, Arc::new(move |image: ColorImage| {
+                        cloned_incoming_image.lock().unwrap().replace(image);
+                        cloned_ctx.request_repaint();
+                    }))).and_then(|mut capturer| {
+                        capturer.start();
+                        Some(capturer)
+                    });
                 }
             } else {
                 if ui.button("Close Camera").clicked() {
-                    self.opened_camera.as_mut().unwrap().stop_stream().unwrap();
-                    self.opened_camera = None;
+                    self.thermal_capturer_inst = None;
                 }
             }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.opened_camera.is_some() {
-                let frame = self.opened_camera.as_mut().unwrap().frame().unwrap();
-                println!("Captured Single Frame of {}", frame.buffer().len());
-                let decoded = frame.decode_image::<RgbFormat>().unwrap();
-                let image = egui::ColorImage::from_rgb(
-                    [decoded.width() as usize, decoded.height() as usize],
-                    decoded.as_raw(),
-                );
-                self.camera_texture = Some(ui.ctx().load_texture(
-                    "camera_ing",
-                    image,
-                    Default::default(),
-                ));
-                ui.centered_and_justified(|ui| {
-                    ui.add(
-                        egui::Image::new(self.camera_texture.as_ref().unwrap()).max_height(320.0),
-                    );
-                });
-
-                ui.ctx().request_repaint();
+            let scroll_delta =  ctx.input(|i| i.scroll_delta);
+            if scroll_delta.y != 0.0 {
+                self.preview_zoom += scroll_delta.y / 100.0;
+                if self.preview_zoom < 0.1 {
+                    self.preview_zoom = 0.1;
+                }
             }
+            ui.centered_and_justified(|ui| {
+                self.incoming_image.lock().unwrap().as_mut().and_then(|image| {
+                    self.camera_texture = Some(
+                        ctx.load_texture("cam_ctx", image.clone(), Default::default())
+                    );
+                    Some(())
+                });
+                self.camera_texture.as_ref().and_then(|texture| {
+                    ui.add(egui::Image::new(texture).fit_to_fraction(Vec2::new(self.preview_zoom, self.preview_zoom)));
+                    Some(())
+                });
+            });
         });
     }
 }

@@ -1,30 +1,45 @@
-use std::{thread, mem};
+use std::{mem, sync::{mpsc, Arc}, thread};
 
 use eframe::epaint::ColorImage;
-use nokhwa::{Camera, pixel_format::RgbFormat};
+use nokhwa::{pixel_format::RgbFormat, Camera};
+
+
+
+pub type ThermalCapturerCallback = Arc<dyn Fn(ColorImage) + Send + Sync>;
+
+pub struct ThermalCapturer {
+    ctx: Option<ThermalCapturerCtx>,
+    cmd_writer: mpsc::Sender<ThermalCapturerCmd>,
+}
+
+enum ThermalCapturerCmd {
+    Stop,
+}
 
 struct ThermalCapturerCtx {
     camera: Camera,
-    callback: fn(ColorImage),
-}
-
-struct ThermalCapturer {
-    ctx: Option<ThermalCapturerCtx>,
+    callback: ThermalCapturerCallback,
+    cmd_reader: mpsc::Receiver<ThermalCapturerCmd>,
 }
 
 ///
 /// ThermalCapturer runs in a background thread continuously capturing images from the camera,
 /// And calling the callback function with the captured image.
 impl ThermalCapturer {
-    fn new(camera: Camera, callback: fn(ColorImage)) -> Self {
+    pub fn new(camera: Camera, callback: ThermalCapturerCallback) -> Self {
+        let (cmd_writer, cmd_reader) = mpsc::channel();
         Self {
             ctx: Some(ThermalCapturerCtx {
                 camera,
-                callback,
+                callback: callback,
+                cmd_reader,
             }),
+            cmd_writer,
         }
     }
-    fn start(&mut self) {
+
+    //
+    pub fn start(&mut self) {
         // move the camera out of self so we can use it into the thread
         let mut ctx = mem::replace(&mut self.ctx, None).unwrap();
         thread::spawn(move || {
@@ -37,7 +52,22 @@ impl ThermalCapturer {
                     decoded.as_raw(),
                 );
                 (ctx.callback)(image);
+                match ctx.cmd_reader.try_recv() {
+                    Ok(cmd) => match cmd {
+                        ThermalCapturerCmd::Stop => {
+                            ctx.camera.stop_stream().unwrap();
+                            break;
+                        }
+                    },
+                    Err(_) => {}
+                }
             }
         });
+    }
+}
+
+impl Drop for ThermalCapturer {
+    fn drop(&mut self) {
+        self.cmd_writer.send(ThermalCapturerCmd::Stop).unwrap();
     }
 }

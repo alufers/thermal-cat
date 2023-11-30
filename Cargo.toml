@@ -1,0 +1,16 @@
+[package]
+name = "open-desktop-thermal-viewer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+copypasta = "0.10.0"
+glium = {version = "0.32.1", default-features = true}
+imgui = "0.11.0"
+imgui-glium-renderer = "0.11.0"
+imgui-winit-support = "0.11.0"
+
+[dependencies.winit]
+features = ["x11","wayland"]

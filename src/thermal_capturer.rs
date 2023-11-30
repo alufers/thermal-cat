@@ -9,7 +9,7 @@ use std::{
 use eframe::epaint::{Color32, ColorImage, Pos2, Rect};
 use nokhwa::{pixel_format::RgbFormat, Camera};
 
-use crate::thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENT_DEFAULT};
+use crate::thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENT_DEFAULT, THERMAL_GRADIENTS};
 
 pub struct ThermalCapturerResult {
     pub image: ColorImage,
@@ -25,6 +25,7 @@ pub struct ThermalCapturer {
 }
 
 enum ThermalCapturerCmd {
+    SetGradient(ThermalGradient),
     Stop,
 }
 
@@ -32,6 +33,7 @@ struct ThermalCapturerCtx {
     camera: Camera,
     callback: ThermalCapturerCallback,
     cmd_reader: mpsc::Receiver<ThermalCapturerCmd>,
+    gradient: ThermalGradient,
 }
 
 ///
@@ -45,6 +47,7 @@ impl ThermalCapturer {
                 camera,
                 callback: callback,
                 cmd_reader,
+                gradient: THERMAL_GRADIENTS[0].clone(),
             }),
             cmd_writer,
         }
@@ -75,7 +78,7 @@ impl ThermalCapturer {
 
                 for (i, pixel) in thermal_data.iter().enumerate() {
                    
-                    color_image_pixels[i] = THERMAL_GRADIENT_DEFAULT.get_color((*pixel as f32) / 64.0 - 273.15);
+                    color_image_pixels[i] = ctx.gradient.get_color((*pixel as f32) / 64.0 - 273.15);
                 }
 
                 let image = ColorImage {
@@ -93,12 +96,21 @@ impl ThermalCapturer {
                         ThermalCapturerCmd::Stop => {
                             ctx.camera.stop_stream().unwrap();
                             break;
+                        },
+                        ThermalCapturerCmd::SetGradient(gradient) => {
+                            ctx.gradient = gradient;
                         }
                     },
                     Err(_) => {}
                 }
             }
         });
+    }
+
+    pub fn set_gradient(&mut self, gradient: ThermalGradient) {
+        self.cmd_writer
+            .send(ThermalCapturerCmd::SetGradient(gradient))
+            .unwrap();
     }
 }
 

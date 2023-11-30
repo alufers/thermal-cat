@@ -1,5 +1,6 @@
 use std::{sync::{Arc, Mutex}, f32::consts::E};
 
+use gradient_selector_widget::GradientSelectorView;
 use nokhwa::{
     native_api_backend,
     pixel_format::RgbFormat,
@@ -8,12 +9,13 @@ use nokhwa::{
     Camera,
 };
 
-use eframe::{egui::{self, Id}, epaint::{ColorImage, Vec2}};
+use eframe::{egui::{self, Id, Response}, epaint::{ColorImage, Vec2}};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 use thermal_gradient::THERMAL_GRADIENT_DEFAULT;
 
 mod thermal_capturer;
 mod thermal_gradient;
+mod gradient_selector_widget;
 
 
 fn main() -> Result<(), eframe::Error> {
@@ -47,7 +49,8 @@ struct ThermalViewerApp {
     camera_texture: Option<egui::TextureHandle>,
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
-    gradient_texture: Option<egui::TextureHandle>,
+    gradient_selector: GradientSelectorView,
+ 
 }
 
 impl ThermalViewerApp {
@@ -70,20 +73,15 @@ impl Default for ThermalViewerApp {
             open_camera_error: None,
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
-            gradient_texture: None,
+
+            gradient_selector: GradientSelectorView::new(),
         }
     }
 }
 
 impl eframe::App for ThermalViewerApp {
     fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
-        if self.gradient_texture.is_none() {
-            
-            let gradient_image = THERMAL_GRADIENT_DEFAULT.create_demo_image(256, 32);
-            self.gradient_texture = Some(
-                ctx.load_texture("gradient", gradient_image, Default::default())
-            );
-        }
+      
         egui::SidePanel::new(egui::panel::Side::Left, Id::new("left_sidepanel")).show(ctx, |ui| {
             ui.heading("Open Thermal Viewer");
             ui.separator();
@@ -145,24 +143,12 @@ impl eframe::App for ThermalViewerApp {
             }
 
             ui.separator();
-            ui.label("Select gradient");
-            egui::Grid::new("gradient_grid")
-                .num_columns(2)
-                .spacing([10.0, 10.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    ui.radio(true, "Gradient 1");
-                    ui.image(self.gradient_texture.as_ref().unwrap());
-                    ui.end_row();
-                    ui.radio(true, "Gradient 1");
-                    ui.label("Gradient 1");
-                    ui.end_row();
-                    ui.radio(true, "Gradient 1");
-                    ui.label("Gradient 1");
-                    ui.end_row();
-                    
-                });
+            
+            if self.gradient_selector.draw(ui).changed() && self.thermal_capturer_inst.is_some() {
+               
+                self.thermal_capturer_inst.as_mut().unwrap().set_gradient(self.gradient_selector.selected_gradient().clone());
 
+            }
 
         });
 

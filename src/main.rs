@@ -1,15 +1,15 @@
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, f32::consts::E};
 
 use nokhwa::{
     native_api_backend,
     pixel_format::RgbFormat,
     query,
-    utils::{CameraIndex, CameraInfo, RequestedFormat, RequestedFormatType},
+    utils::{CameraIndex, CameraInfo, RequestedFormat, RequestedFormatType, CameraFormat, Resolution, FrameFormat},
     Camera,
 };
 
 use eframe::{egui::{self, Id}, epaint::{ColorImage, Vec2}};
-use thermal_capturer::ThermalCapturer;
+use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 
 mod thermal_capturer;
 fn main() -> Result<(), eframe::Error> {
@@ -19,7 +19,7 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
     eframe::run_native(
-        "My egui App",
+        "Open Desktop Thermal Viewer",
         options,
         Box::new(|cc| {
             // This gives us image support:
@@ -33,6 +33,8 @@ fn main() -> Result<(), eframe::Error> {
 struct ThermalViewerApp {
     cameras: Vec<CameraInfo>,
     selected_camera_index: CameraIndex,
+    open_camera_error: Option<String>,
+
 
     thermal_capturer_inst: Option<ThermalCapturer>,
 
@@ -59,6 +61,7 @@ impl Default for ThermalViewerApp {
             selected_camera_index: CameraIndex::Index(0),
             thermal_capturer_inst: None,
             camera_texture: None,
+            open_camera_error: None,
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
         }
@@ -88,22 +91,35 @@ impl eframe::App for ThermalViewerApp {
                         );
                     });
                 });
+
+            if let Some(error) = &self.open_camera_error {
+                ui.colored_label(egui::Color32::RED, error);
+            }
             if self.thermal_capturer_inst.is_none() {
                 if ui.button("Open Camera").clicked() {
                     // todo: do something
                     let requested = RequestedFormat::new::<RgbFormat>(
-                        RequestedFormatType::AbsoluteHighestResolution,
+                        RequestedFormatType::Closest(CameraFormat::new(Resolution::new(256, 192), FrameFormat::YUYV, 25))
                     );
-                    let cam = Camera::new(self.selected_camera_index.clone(), requested).unwrap();
                     let cloned_ctx = ctx.clone();
                     let mut cloned_incoming_image = self.incoming_image.clone();
-                    self.thermal_capturer_inst = Some(ThermalCapturer::new(cam, Arc::new(move |image: ColorImage| {
-                        cloned_incoming_image.lock().unwrap().replace(image);
-                        cloned_ctx.request_repaint();
-                    }))).and_then(|mut capturer| {
-                        capturer.start();
-                        Some(capturer)
+
+                    let _ = Camera::new(self.selected_camera_index.clone(), requested).and_then(|mut cam| {
+                        self.thermal_capturer_inst = Some(ThermalCapturer::new(cam, Arc::new(move |result: ThermalCapturerResult| {
+                            cloned_incoming_image.lock().unwrap().replace(result.image);
+                            cloned_ctx.request_repaint();
+                        }))).and_then(|mut capturer| {
+                            capturer.start();
+                            Some(capturer)
+                        });
+                        self.open_camera_error = None;
+                       Ok(())
+                    }).or_else(|err| {
+                        self.open_camera_error = Some(format!("Failed to open camera: {}", err));
+                        Err(err)
                     });
+                    
+                   
                 }
             } else {
                 if ui.button("Close Camera").clicked() {

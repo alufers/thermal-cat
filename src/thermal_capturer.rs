@@ -5,7 +5,15 @@ use nokhwa::{pixel_format::RgbFormat, Camera};
 
 
 
-pub type ThermalCapturerCallback = Arc<dyn Fn(ColorImage) + Send + Sync>;
+
+
+pub struct ThermalCapturerResult {
+    pub image: ColorImage,
+    pub real_fps: f32,
+    pub reported_fps: f32,
+}
+
+pub type ThermalCapturerCallback = Arc<dyn Fn(ThermalCapturerResult) + Send + Sync>;
 
 pub struct ThermalCapturer {
     ctx: Option<ThermalCapturerCtx>,
@@ -44,14 +52,23 @@ impl ThermalCapturer {
         let mut ctx = mem::replace(&mut self.ctx, None).unwrap();
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
+            let mut last_frame_time = std::time::Instant::now();
             loop {
+                last_frame_time = std::time::Instant::now();
                 let frame = ctx.camera.frame().unwrap();
+                println!("frame_format {:?}", frame.source_frame_format());
                 let decoded = frame.decode_image::<RgbFormat>().unwrap();
                 let image = ColorImage::from_rgb(
                     [decoded.width() as usize, decoded.height() as usize],
                     decoded.as_raw(),
                 );
-                (ctx.callback)(image);
+                (ctx.callback)(
+                    ThermalCapturerResult {
+                        image,
+                        real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
+                        reported_fps: ctx.camera.frame_rate() as f32,
+                    }
+                );
                 match ctx.cmd_reader.try_recv() {
                     Ok(cmd) => match cmd {
                         ThermalCapturerCmd::Stop => {
@@ -61,6 +78,7 @@ impl ThermalCapturer {
                     },
                     Err(_) => {}
                 }
+                
             }
         });
     }

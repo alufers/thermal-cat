@@ -11,6 +11,10 @@ glium = {version = "0.32.1", default-features = true}
 imgui = "0.11.0"
 imgui-glium-renderer = "0.11.0"
 imgui-winit-support = "0.11.0"
+nokhwa = {git ="https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-linux-build", features = ["input-v4l"]}
+
+
+
 
 [dependencies.winit]
-features = ["x11","wayland"]
+features = ["wayland"]

@@ -1,4 +1,4 @@
-use glium::glutin;
+use glium::{glutin, implement_vertex};
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
@@ -29,6 +29,7 @@ pub fn init(title: &str) -> System {
     let context = glutin::ContextBuilder::new().with_vsync(true);
     let builder = WindowBuilder::new()
         .with_title(title.to_owned())
+        .with_transparent(false)
         .with_inner_size(glutin::dpi::LogicalSize::new(1024f64, 768f64));
     let display =
         Display::new(builder, context, &event_loop).expect("Failed to initialize display");
@@ -123,6 +124,45 @@ impl System {
         } = self;
         let mut last_frame = Instant::now();
 
+
+        // ass code 
+        #[derive(Copy, Clone)]
+        struct Vertex {
+            position: [f32; 2],
+        }
+        implement_vertex!(Vertex, position);
+        let shape = vec![
+            Vertex { position: [-0.5, -0.5] },
+            Vertex { position: [ 0.0,  0.5] },
+            Vertex { position: [ 0.5, -0.25] }
+        ];
+        let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
+        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    
+        let vertex_shader_src = r#"
+            #version 140
+    
+            in vec2 position;
+    
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        "#;
+    
+        let fragment_shader_src = r#"
+            #version 140
+    
+            out vec4 color;
+    
+            void main() {
+                color = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        "#;
+    
+        let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
+        
+
+
         event_loop.run(move |event, _, control_flow| match event {
             Event::NewEvents(_) => {
                 let now = Instant::now();
@@ -147,12 +187,25 @@ impl System {
 
                 let gl_window = display.gl_window();
                 let mut target = display.draw();
+                
                 target.clear_color_srgb(1.0, 1.0, 1.0, 1.0);
+                
+                target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
+                    &Default::default()).unwrap();
+
                 platform.prepare_render(ui, gl_window.window());
                 let draw_data = imgui.render();
+
+                // use renderer from imgui
                 renderer
                     .render(&mut target, draw_data)
                     .expect("Rendering failed");
+
+                
+     
+    
+                
+
                 target.finish().expect("Failed to swap buffers");
             }
             Event::WindowEvent {

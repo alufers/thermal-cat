@@ -3,20 +3,6 @@ use eframe::epaint::{Color32, ColorImage};
 use once_cell::sync::Lazy;
 
 
-pub static  THERMAL_GRADIENT_DEFAULT: Lazy<ThermalGradient> = Lazy::new(|| {
-    ThermalGradient::new("Cold-warm".to_string(), vec![
-        ThermalGradientPoint::from_rgbtemp(0, 0, 0, -20),
-        ThermalGradientPoint::from_rgbtemp(0, 0, 255, 15),
-        ThermalGradientPoint::from_rgbtemp(0, 255, 255, 20),
-        ThermalGradientPoint::from_rgbtemp(0, 255, 0, 25),
-        ThermalGradientPoint::from_rgbtemp(255, 255, 0, 30),
-        ThermalGradientPoint::from_rgbtemp(255, 128, 0, 35),
-        ThermalGradientPoint::from_rgbtemp(255, 0, 0, 40),
-        ThermalGradientPoint::from_rgbtemp(255, 0, 255, 100),
-        ThermalGradientPoint::from_rgbtemp(255, 255, 255, 150),
-    ])
-});
-
 
 pub static THERMAL_GRADIENTS: Lazy<Vec<ThermalGradient>> = Lazy::new(|| {
     vec![

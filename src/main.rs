@@ -11,11 +11,14 @@ use nokhwa::{
 
 use eframe::{egui::{self, Id, Response}, epaint::{ColorImage, Vec2}};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
-use thermal_gradient::THERMAL_GRADIENT_DEFAULT;
+
 
 mod thermal_capturer;
 mod thermal_gradient;
 mod gradient_selector_widget;
+mod camera_adapter;
+mod thermal_data;
+
 
 
 fn main() -> Result<(), eframe::Error> {

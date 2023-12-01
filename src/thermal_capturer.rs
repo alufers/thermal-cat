@@ -1,4 +1,3 @@
-
 use std::{
     mem,
     ops::Index,
@@ -9,7 +8,10 @@ use std::{
 use eframe::epaint::{Color32, ColorImage, Pos2, Rect};
 use nokhwa::{pixel_format::RgbFormat, Camera};
 
-use crate::thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENT_DEFAULT, THERMAL_GRADIENTS};
+use crate::{
+    camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
+    thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENTS},
+};
 
 pub struct ThermalCapturerResult {
     pub image: ColorImage,
@@ -60,31 +62,18 @@ impl ThermalCapturer {
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
 
-           
             let mut last_frame_time = std::time::Instant::now();
+            let infiray = InfirayP2ProAdapter::new();
             loop {
                 last_frame_time = std::time::Instant::now();
-                let frame = ctx.camera.frame().unwrap();
 
-                let frame_data = frame.buffer();
-
-                let thermal_data_buf = &frame_data[256 * 192 * 2..];
-
-                let thermal_data = unsafe {
-                    std::slice::from_raw_parts(thermal_data_buf.as_ptr() as *const u16, 256 * 192)
-                };
-
-                let mut color_image_pixels = vec![Color32::default(); 256 * 192];
-
-                for (i, pixel) in thermal_data.iter().enumerate() {
-                   
-                    color_image_pixels[i] = ctx.gradient.get_color((*pixel as f32) / 64.0 - 273.15);
-                }
-
-                let image = ColorImage {
-                    pixels: color_image_pixels,
-                    size: [256, 192],
-                };
+                let image =
+                    infiray
+                        .capture_thermal_data(&mut ctx.camera)
+                        .and_then(|thermal_data| {
+                            Ok(thermal_data
+                                .map_to_image(|temp| ctx.gradient.get_color(temp - 273.15)))
+                        }).unwrap();
 
                 (ctx.callback)(ThermalCapturerResult {
                     image,
@@ -96,7 +85,7 @@ impl ThermalCapturer {
                         ThermalCapturerCmd::Stop => {
                             ctx.camera.stop_stream().unwrap();
                             break;
-                        },
+                        }
                         ThermalCapturerCmd::SetGradient(gradient) => {
                             ctx.gradient = gradient;
                         }

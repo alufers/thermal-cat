@@ -32,6 +32,7 @@ mod thermal_data;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
+mod temperature_unit;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -148,7 +149,9 @@ impl eframe::App for ThermalViewerApp {
                     .inspect_err(|err| error!("Failed to load user preferences: {}", err))
                     .unwrap_or_default(),
             );
-            self.open_selected_camera(ctx);
+            if self.prefs.as_ref().unwrap().auto_open_camera {
+                self.open_selected_camera(ctx);
+            }
         }
         self.user_preferences_window.draw(&ctx, &mut self.prefs.as_mut().unwrap());
 

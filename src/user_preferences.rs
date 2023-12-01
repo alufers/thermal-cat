@@ -4,6 +4,8 @@ use serde::{Serialize, Deserialize};
 
 use anyhow::Result;
 
+use crate::temperature_unit::TemperatureUnit;
+
 const MAX_KNOWN_PREFERENCES_VERSION: u32 = 1;
 
 
@@ -11,6 +13,7 @@ const MAX_KNOWN_PREFERENCES_VERSION: u32 = 1;
 pub struct UserPreferences {
     pub preferences_version: u32,
     pub auto_open_camera: bool,
+    pub temperature_unit: TemperatureUnit,
 }
 
 impl Default for UserPreferences {
@@ -18,6 +21,7 @@ impl Default for UserPreferences {
         Self {
             preferences_version: 1,
             auto_open_camera: true,
+            temperature_unit: TemperatureUnit::Celsius,
         }
     }
 }

@@ -1,4 +1,7 @@
-use std::{sync::{Arc, Mutex}, f32::consts::E};
+use std::{
+    f32::consts::E,
+    sync::{Arc, Mutex},
+};
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
@@ -6,21 +9,25 @@ use nokhwa::{
     native_api_backend,
     pixel_format::RgbFormat,
     query,
-    utils::{CameraIndex, CameraInfo, RequestedFormat, RequestedFormatType, CameraFormat, Resolution, FrameFormat},
+    utils::{
+        CameraFormat, CameraIndex, CameraInfo, FrameFormat, RequestedFormat, RequestedFormatType,
+        Resolution,
+    },
     Camera,
 };
 
-use eframe::{egui::{self, Id, Response}, epaint::{ColorImage, Vec2}};
+use eframe::{
+    egui::{self, Button, Id, Response},
+    epaint::{text::LayoutJob, ColorImage, Vec2},
+};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 
-
-mod thermal_capturer;
-mod thermal_gradient;
-mod gradient_selector_widget;
 mod camera_adapter;
-mod thermal_data;
 mod camera_enumerator;
-
+mod gradient_selector_widget;
+mod thermal_capturer;
+mod thermal_data;
+mod thermal_gradient;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -41,44 +48,81 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct ThermalViewerApp {
+    did_init: bool,
+
     cameras: Vec<EnumeratedCamera>,
     selected_camera_index: CameraIndex,
     open_camera_error: Option<String>,
 
-
     thermal_capturer_inst: Option<ThermalCapturer>,
 
-    
     preview_zoom: f32,
     camera_texture: Option<egui::TextureHandle>,
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
     gradient_selector: GradientSelectorView,
- 
 }
 
 impl ThermalViewerApp {
-    fn selected_camera_info(&self) -> Option<&CameraInfo> {
+    fn selected_camera_info(&self) -> Option<&EnumeratedCamera> {
         self.cameras
             .iter()
             .find(|camera| camera.info.index() == &self.selected_camera_index)
-            .map(|camera| &camera.info)
+    }
+
+    fn open_selected_camera(&mut self, ctx: &egui::Context) {
+        if let Some(adapter) = self.selected_camera_info().and_then(|i| i.adapter.as_ref()) {
+            let cloned_ctx = ctx.clone();
+            let cloned_incoming_image = self.incoming_image.clone();
+            let cloned_adapter = adapter.clone();
+
+            let _ = Camera::new(
+                self.selected_camera_index.clone(),
+                adapter.requested_format(),
+            )
+            .and_then(|cam| {
+                // Create thermal capturer
+                self.thermal_capturer_inst = Some(ThermalCapturer::new(
+                    cam,
+                    cloned_adapter,
+                    Arc::new(move |result: ThermalCapturerResult| {
+                        cloned_incoming_image.lock().unwrap().replace(result.image);
+                        cloned_ctx.request_repaint();
+                    }),
+                ))
+                .and_then(|mut capturer| {
+                    capturer.start();
+                    Some(capturer)
+                });
+                self.open_camera_error = None;
+                Ok(())
+            })
+            .or_else(|err| {
+                self.open_camera_error = Some(format!("Failed to open camera: {}", err));
+                Err(err)
+            });
+        }
     }
 }
 
 impl Default for ThermalViewerApp {
     fn default() -> Self {
         let backend = native_api_backend().unwrap();
-
+        let cameras = enumerate_cameras().unwrap();
         Self {
-            cameras: enumerate_cameras().unwrap(),
-            selected_camera_index: CameraIndex::Index(0),
+            did_init: false,
+            selected_camera_index: cameras
+                .iter()
+                .find(|camera| camera.adapter.is_some())
+                .map(|camera| camera.info.index().clone())
+                .unwrap_or(CameraIndex::Index(0)),
+            cameras,
+
             thermal_capturer_inst: None,
             camera_texture: None,
             open_camera_error: None,
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
-
             gradient_selector: GradientSelectorView::new(),
         }
     }
@@ -86,56 +130,47 @@ impl Default for ThermalViewerApp {
 
 impl eframe::App for ThermalViewerApp {
     fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
-      
+        if !self.did_init {
+            self.did_init = true;
+            self.open_selected_camera(ctx);
+        }
         egui::SidePanel::new(egui::panel::Side::Left, Id::new("left_sidepanel")).show(ctx, |ui| {
             ui.heading("Open Thermal Viewer");
             ui.separator();
             ui.label("Select Camera:");
             egui::ComboBox::from_label("")
-                .selected_text(format!(
-                    "#{} - {}",
-                    self.selected_camera_index,
+                .selected_text(
                     self.selected_camera_info()
-                        .and_then(|camera| Some(camera.human_name()))
-                        .unwrap_or("None".to_string())
-                ))
+                        .and_then(|c| Some(c.rich_text_name(true)))
+                        .or(Some(LayoutJob::single_section(
+                            "No Camera Selected".to_string(),
+                            Default::default(),
+                        )))
+                        .unwrap(),
+                )
                 .width(200.0)
                 .show_ui(ui, |ui| {
                     self.cameras.iter().enumerate().for_each(|(i, camera)| {
                         ui.selectable_value(
                             &mut self.selected_camera_index,
                             camera.info.index().clone(),
-                            camera.rich_text_name(),
+                            camera.rich_text_name(false),
                         );
                     });
                 });
 
-            
             if self.thermal_capturer_inst.is_none() {
-                if ui.button("Open Camera").clicked() {
-                    // todo: do something
-                    let requested = RequestedFormat::new::<RgbFormat>(
-                        RequestedFormatType::Closest(CameraFormat::new(Resolution::new(256, 192 * 2), FrameFormat::YUYV, 25))
-                    );
-                    let cloned_ctx = ctx.clone();
-                    let mut cloned_incoming_image = self.incoming_image.clone();
-
-                    let _ = Camera::new(self.selected_camera_index.clone(), requested).and_then(|mut cam| {
-                        self.thermal_capturer_inst = Some(ThermalCapturer::new(cam, Arc::new(move |result: ThermalCapturerResult| {
-                            cloned_incoming_image.lock().unwrap().replace(result.image);
-                            cloned_ctx.request_repaint();
-                        }))).and_then(|mut capturer| {
-                            capturer.start();
-                            Some(capturer)
-                        });
-                        self.open_camera_error = None;
-                       Ok(())
-                    }).or_else(|err| {
-                        self.open_camera_error = Some(format!("Failed to open camera: {}", err));
-                        Err(err)
-                    });
-                    
-                   
+                // Show the "Open Camera" button only if the selected camera exists and has an adapter
+                if ui
+                    .add_enabled(
+                        self.selected_camera_info()
+                            .and_then(|i| i.adapter.as_ref())
+                            .is_some(),
+                        Button::new("Open Camera"),
+                    )
+                    .clicked()
+                {
+                    self.open_selected_camera(ctx);
                 }
             } else {
                 if ui.button("Close Camera").clicked() {
@@ -148,17 +183,17 @@ impl eframe::App for ThermalViewerApp {
             }
 
             ui.separator();
-            
+
             if self.gradient_selector.draw(ui).changed() && self.thermal_capturer_inst.is_some() {
-               
-                self.thermal_capturer_inst.as_mut().unwrap().set_gradient(self.gradient_selector.selected_gradient().clone());
-
+                self.thermal_capturer_inst
+                    .as_mut()
+                    .unwrap()
+                    .set_gradient(self.gradient_selector.selected_gradient().clone());
             }
-
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let scroll_delta =  ctx.input(|i| i.scroll_delta);
+            let scroll_delta = ctx.input(|i| i.scroll_delta);
             if scroll_delta.y != 0.0 {
                 self.preview_zoom += scroll_delta.y / 100.0;
                 if self.preview_zoom < 0.1 {
@@ -166,14 +201,20 @@ impl eframe::App for ThermalViewerApp {
                 }
             }
             ui.centered_and_justified(|ui| {
-                self.incoming_image.lock().unwrap().as_mut().and_then(|image| {
-                    self.camera_texture = Some(
-                        ctx.load_texture("cam_ctx", image.clone(), Default::default())
-                    );
-                    Some(())
-                });
+                self.incoming_image
+                    .lock()
+                    .unwrap()
+                    .as_mut()
+                    .and_then(|image| {
+                        self.camera_texture =
+                            Some(ctx.load_texture("cam_ctx", image.clone(), Default::default()));
+                        Some(())
+                    });
                 self.camera_texture.as_ref().and_then(|texture| {
-                    ui.add(egui::Image::new(texture).fit_to_fraction(Vec2::new(self.preview_zoom, self.preview_zoom)));
+                    ui.add(
+                        egui::Image::new(texture)
+                            .fit_to_fraction(Vec2::new(self.preview_zoom, self.preview_zoom)),
+                    );
                     Some(())
                 });
             });

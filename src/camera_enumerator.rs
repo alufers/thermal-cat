@@ -1,6 +1,9 @@
 use std::{error::Error, sync::Arc};
 
-use eframe::{egui::{RichText, TextFormat}, epaint::{text::LayoutJob, Color32, FontId, FontFamily}};
+use eframe::{
+    egui::{RichText, TextFormat, WidgetText},
+    epaint::{text::LayoutJob, Color32, FontFamily, FontId},
+};
 use nokhwa::{native_api_backend, query, utils::CameraInfo, NokhwaError};
 
 use once_cell::sync::Lazy;
@@ -29,10 +32,10 @@ pub struct EnumeratedCamera {
 }
 
 impl EnumeratedCamera {
-    pub fn rich_text_name(&self) -> LayoutJob {
+    pub fn rich_text_name(&self, shorten: bool) -> LayoutJob {
         let mut job = LayoutJob::default();
         job.append(
-            & self.info.human_name().clone(),
+            &self.info.human_name().clone(),
             0.0,
             TextFormat {
                 color: Color32::WHITE,
@@ -41,7 +44,7 @@ impl EnumeratedCamera {
         );
         if let Some(adapter) = &self.adapter {
             job.append(
-                &format!(" ({})", adapter.name()),
+                &format!("\n({})", adapter.name()),
                 0.0,
                 TextFormat {
                     color: Color32::GREEN,
@@ -50,20 +53,20 @@ impl EnumeratedCamera {
             );
         }
         if let Some((vid, pid)) = self.usb_vid_pid {
-          
-
-            job.append(
-                &format!(" (USB {:04x}:{:04x})", vid, pid),
-                0.0,
-                TextFormat {
-                    color: Color32::GRAY,
-                    font_id: FontId::new(14.0, FontFamily::Monospace),
-                    ..Default::default()
-                },
-            );
+            if !shorten {
+                job.append(
+                    &format!("\n(USB {:04x}:{:04x})", vid, pid),
+                    0.0,
+                    TextFormat {
+                        color: Color32::GRAY,
+                        font_id: FontId::new(14.0, FontFamily::Monospace),
+                        ..Default::default()
+                    },
+                );
+            }
         }
 
-        return job
+        return job;
     }
 }
 

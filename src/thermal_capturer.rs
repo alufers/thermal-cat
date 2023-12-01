@@ -36,18 +36,20 @@ struct ThermalCapturerCtx {
     callback: ThermalCapturerCallback,
     cmd_reader: mpsc::Receiver<ThermalCapturerCmd>,
     gradient: ThermalGradient,
+    adapter: Arc<dyn CameraAdapter>,
 }
 
 ///
 /// ThermalCapturer runs in a background thread continuously capturing images from the camera,
 /// And calling the callback function with the captured image.
 impl ThermalCapturer {
-    pub fn new(camera: Camera, callback: ThermalCapturerCallback) -> Self {
+    pub fn new(camera: Camera, adapter: Arc<dyn CameraAdapter>, callback: ThermalCapturerCallback) -> Self {
         let (cmd_writer, cmd_reader) = mpsc::channel();
         Self {
             ctx: Some(ThermalCapturerCtx {
                 camera,
-                callback: callback,
+                adapter,
+                callback,
                 cmd_reader,
                 gradient: THERMAL_GRADIENTS[0].clone(),
             }),

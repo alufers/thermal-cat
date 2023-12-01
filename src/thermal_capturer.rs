@@ -63,7 +63,7 @@ impl ThermalCapturer {
             ctx.camera.open_stream().unwrap();
 
             let mut last_frame_time = std::time::Instant::now();
-            let infiray = InfirayP2ProAdapter::new();
+            let infiray = InfirayP2ProAdapter {};
             loop {
                 last_frame_time = std::time::Instant::now();
 

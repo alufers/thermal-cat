@@ -25,9 +25,6 @@ pub struct InfirayP2ProAdapter {
 //
 // THe uint16 thermal data is a 256x192 array of 16-bit unsigned integers, representing the temperature in 1/64th's Kelvin
 impl CameraAdapter for InfirayP2ProAdapter {
-    fn new() -> Self {
-        InfirayP2ProAdapter {}
-    }
 
     fn name(&self) -> String {
         "Infiray P2 Pro".to_string()
@@ -50,7 +47,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
     fn capture_thermal_data(
         &self,
         cam: &mut nokhwa::Camera,
-    ) -> Result<ThermalData, impl Error> {
+    ) -> Result<ThermalData, NokhwaError> {
         let frame = cam.frame()?;
 
         let frame_data = frame.buffer();
@@ -70,5 +67,10 @@ impl CameraAdapter for InfirayP2ProAdapter {
             u16_temperature_data.iter().map(|&x| x as f32 / 64.0).collect(),
         ))
 
+    }
+
+    fn usb_vid_pid(&self) -> (u16, u16) {
+        // Bus 001 Device 061: ID 0bda:5830 Realtek Semiconductor Corp. USB Camera
+        return (0x0bda, 0x5830);
     }
 }

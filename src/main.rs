@@ -105,7 +105,7 @@ impl eframe::App for ThermalViewerApp {
                         ui.selectable_value(
                             &mut self.selected_camera_index,
                             camera.info.index().clone(),
-                            format!("#{} - {}", i, camera.friendly_name()),
+                            camera.rich_text_name(),
                         );
                     });
                 });

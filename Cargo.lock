@@ -2148,6 +2148,7 @@ dependencies = [
  "env_logger",
  "nokhwa",
  "once_cell",
+ "regex",
  "winit 0.29.4",
 ]
 

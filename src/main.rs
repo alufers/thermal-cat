@@ -1,26 +1,28 @@
 use std::{
     f32::consts::E,
+    fmt::Error,
     sync::{Arc, Mutex},
 };
+
+use log::{debug, error, info, log_enabled, Level};
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
 use nokhwa::{
     native_api_backend,
-    pixel_format::RgbFormat,
-    query,
     utils::{
-        CameraFormat, CameraIndex, CameraInfo, FrameFormat, RequestedFormat, RequestedFormatType,
-        Resolution,
+        CameraIndex,
     },
     Camera,
 };
 
 use eframe::{
     egui::{self, Button, Id, Response},
-    epaint::{text::LayoutJob, ColorImage, Vec2},
+    epaint::{text::LayoutJob, ColorImage, Vec2}, 
 };
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
+use user_preferences::UserPreferences;
+use user_preferences_window::UserPreferencesWindow;
 
 mod camera_adapter;
 mod camera_enumerator;
@@ -28,11 +30,14 @@ mod gradient_selector_widget;
 mod thermal_capturer;
 mod thermal_data;
 mod thermal_gradient;
+mod user_preferences;
+mod user_preferences_window;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([900.0, 600.0]),
+        renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };
     eframe::run_native(
@@ -49,6 +54,9 @@ fn main() -> Result<(), eframe::Error> {
 
 struct ThermalViewerApp {
     did_init: bool,
+    prefs: Option<UserPreferences>,
+
+    user_preferences_window: UserPreferencesWindow,
 
     cameras: Vec<EnumeratedCamera>,
     selected_camera_index: CameraIndex,
@@ -111,6 +119,9 @@ impl Default for ThermalViewerApp {
         let cameras = enumerate_cameras().unwrap();
         Self {
             did_init: false,
+            prefs: None,
+            user_preferences_window: UserPreferencesWindow::new(),
+
             selected_camera_index: cameras
                 .iter()
                 .find(|camera| camera.adapter.is_some())
@@ -132,8 +143,29 @@ impl eframe::App for ThermalViewerApp {
     fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
         if !self.did_init {
             self.did_init = true;
+            self.prefs = Some(
+                UserPreferences::load()
+                    .inspect_err(|err| error!("Failed to load user preferences: {}", err))
+                    .unwrap_or_default(),
+            );
             self.open_selected_camera(ctx);
         }
+        self.user_preferences_window.draw(&ctx, &mut self.prefs.as_mut().unwrap());
+
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Preferences").clicked() {
+                        self.user_preferences_window.show(&mut self.prefs.as_mut().unwrap());
+                    }
+                    ui.separator();
+                    if ui.button("Quit").clicked() {
+                        self.thermal_capturer_inst = None;
+                        std::process::exit(0);
+                    }
+                });
+            });
+        });
         egui::SidePanel::new(egui::panel::Side::Left, Id::new("left_sidepanel")).show(ctx, |ui| {
             ui.heading("Open Thermal Viewer");
             ui.separator();

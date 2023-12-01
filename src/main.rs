@@ -1,5 +1,6 @@
 use std::{sync::{Arc, Mutex}, f32::consts::E};
 
+use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
 use nokhwa::{
     native_api_backend,
@@ -18,7 +19,7 @@ mod thermal_gradient;
 mod gradient_selector_widget;
 mod camera_adapter;
 mod thermal_data;
-
+mod camera_enumerator;
 
 
 fn main() -> Result<(), eframe::Error> {
@@ -40,7 +41,7 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct ThermalViewerApp {
-    cameras: Vec<CameraInfo>,
+    cameras: Vec<EnumeratedCamera>,
     selected_camera_index: CameraIndex,
     open_camera_error: Option<String>,
 
@@ -60,7 +61,8 @@ impl ThermalViewerApp {
     fn selected_camera_info(&self) -> Option<&CameraInfo> {
         self.cameras
             .iter()
-            .find(|camera| camera.index() == &self.selected_camera_index)
+            .find(|camera| camera.info.index() == &self.selected_camera_index)
+            .map(|camera| &camera.info)
     }
 }
 
@@ -69,7 +71,7 @@ impl Default for ThermalViewerApp {
         let backend = native_api_backend().unwrap();
 
         Self {
-            cameras: query(backend).unwrap(),
+            cameras: enumerate_cameras().unwrap(),
             selected_camera_index: CameraIndex::Index(0),
             thermal_capturer_inst: None,
             camera_texture: None,
@@ -102,8 +104,8 @@ impl eframe::App for ThermalViewerApp {
                     self.cameras.iter().enumerate().for_each(|(i, camera)| {
                         ui.selectable_value(
                             &mut self.selected_camera_index,
-                            camera.index().clone(),
-                            format!("#{} - {}", i, camera.human_name()),
+                            camera.info.index().clone(),
+                            format!("#{} - {}", i, camera.friendly_name()),
                         );
                     });
                 });

@@ -12,16 +12,18 @@ const MAX_KNOWN_PREFERENCES_VERSION: u32 = 1;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserPreferences {
     pub preferences_version: u32,
-    pub auto_open_camera: bool,
     pub temperature_unit: TemperatureUnit,
+    pub auto_open_camera: bool,
+    pub show_unsupported_cameras: bool,
 }
 
 impl Default for UserPreferences {
     fn default() -> Self {
         Self {
             preferences_version: 1,
-            auto_open_camera: true,
             temperature_unit: TemperatureUnit::Celsius,
+            auto_open_camera: true,
+            show_unsupported_cameras: false,
         }
     }
 }

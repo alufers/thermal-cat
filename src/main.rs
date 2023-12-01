@@ -8,17 +8,11 @@ use log::{debug, error, info, log_enabled, Level};
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
-use nokhwa::{
-    native_api_backend,
-    utils::{
-        CameraIndex,
-    },
-    Camera,
-};
+use nokhwa::{native_api_backend, utils::CameraIndex, Camera};
 
 use eframe::{
     egui::{self, Button, Id, Response},
-    epaint::{text::LayoutJob, ColorImage, Vec2}, 
+    epaint::{text::LayoutJob, ColorImage, Vec2},
 };
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 use user_preferences::UserPreferences;
@@ -27,12 +21,12 @@ use user_preferences_window::UserPreferencesWindow;
 mod camera_adapter;
 mod camera_enumerator;
 mod gradient_selector_widget;
+mod temperature_unit;
 mod thermal_capturer;
 mod thermal_data;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
-mod temperature_unit;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -153,13 +147,15 @@ impl eframe::App for ThermalViewerApp {
                 self.open_selected_camera(ctx);
             }
         }
-        self.user_preferences_window.draw(&ctx, &mut self.prefs.as_mut().unwrap());
+        self.user_preferences_window
+            .draw(&ctx, &mut self.prefs.as_mut().unwrap());
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Preferences").clicked() {
-                        self.user_preferences_window.show(&mut self.prefs.as_mut().unwrap());
+                        self.user_preferences_window
+                            .show(&mut self.prefs.as_mut().unwrap());
                     }
                     ui.separator();
                     if ui.button("Quit").clicked() {
@@ -185,13 +181,24 @@ impl eframe::App for ThermalViewerApp {
                 )
                 .width(200.0)
                 .show_ui(ui, |ui| {
-                    self.cameras.iter().enumerate().for_each(|(i, camera)| {
-                        ui.selectable_value(
-                            &mut self.selected_camera_index,
-                            camera.info.index().clone(),
-                            camera.rich_text_name(false),
-                        );
-                    });
+                    self.cameras
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, cam)| {
+                            cam.adapter.is_some()
+                                || self
+                                    .prefs
+                                    .as_ref()
+                                    .map(|p| p.show_unsupported_cameras)
+                                    .unwrap_or(false)
+                        })
+                        .for_each(|(i, camera)| {
+                            ui.selectable_value(
+                                &mut self.selected_camera_index,
+                                camera.info.index().clone(),
+                                camera.rich_text_name(false),
+                            );
+                        });
                 });
 
             if self.thermal_capturer_inst.is_none() {

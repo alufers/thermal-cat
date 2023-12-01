@@ -51,6 +51,10 @@ impl UserPreferencesWindow {
                             ui.label("Auto Open Camera");
                             ui.checkbox(&mut edited_prefs.auto_open_camera, "");
                             ui.end_row();
+
+                            ui.label("Show unsupported cameras");
+                            ui.checkbox(&mut edited_prefs.show_unsupported_cameras, "");
+                            ui.end_row();
                         });
 
                     ui.add_space(10.0);

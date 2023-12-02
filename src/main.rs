@@ -19,7 +19,7 @@ use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
-use temperature_edit_field::temperature_edit_field;
+use temperature_edit_field::{temperature_edit_field, temperature_range_edit_field};
 
 mod camera_adapter;
 mod camera_enumerator;
@@ -248,30 +248,18 @@ impl eframe::App for ThermalViewerApp {
             ui.separator();
 
             ui.checkbox(&mut self.auto_range, "Auto Range");
-            egui::Grid::new("range_grid").show(ui, |ui| {
-                ui.set_enabled(!self.auto_range);
-                ui.label("Min");
-                ui.label("Max");
-                ui.end_row();
-                temperature_edit_field(
-                    ui,
-                    self.prefs
-                        .as_ref()
-                        .map(|p| p.temperature_unit)
-                        .unwrap_or_default(),
-                    &mut self.range.lock().unwrap().min,
-                );
 
-                temperature_edit_field(
-                    ui,
-                    self.prefs
-                        .as_ref()
-                        .map(|p| p.temperature_unit)
-                        .unwrap_or_default(),
-                        &mut self.range.lock().unwrap().max,
-                );
-                ui.end_row();
-            });
+            temperature_range_edit_field(
+                ui,
+                "range",
+                !self.auto_range,
+                self.prefs
+                    .as_ref()
+                    .map(|p| p.temperature_unit)
+                    .unwrap_or_default(),
+                &mut self.range.lock().unwrap(),
+            );
+
 
             ui.separator();
 

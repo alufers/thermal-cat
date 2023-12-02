@@ -1,6 +1,6 @@
 #![feature(let_chains)]
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
 use log::error;
 
@@ -10,7 +10,7 @@ use nokhwa::{native_api_backend, utils::CameraIndex, Camera};
 
 use eframe::{
     egui::{self, Button, Id},
-    epaint::{text::LayoutJob, ColorImage, Vec2},
+    epaint::{text::LayoutJob, Vec2},
 };
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};

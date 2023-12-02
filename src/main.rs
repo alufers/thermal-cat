@@ -31,6 +31,7 @@ mod thermal_data;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
+mod auto_display_range_controller;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).

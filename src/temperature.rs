@@ -1,13 +1,14 @@
+use env_logger::fmt::Formatter;
 use serde::{Deserialize, Serialize};
 // 0.17.1
 use strum_macros::{EnumIter, Display}; // 0.17.1
 
-use std::ops;
+use std::{ops, path::Display, fmt::{Debug, self}};
 
 //
 // Represents a temperature in Kelvin.
 //
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub struct Temp {
     value_kelvin: f32,
 }
@@ -24,6 +25,11 @@ impl Temp {
     pub fn new(value_kelvin: f32) -> Self {
         Self { value_kelvin }
     }
+
+    pub fn from_celsius(value: f32) -> Self {
+        Temp::from_unit(TemperatureUnit::Celsius, value)
+    }
+
     pub fn from_unit(unit: TemperatureUnit, value: f32) -> Self {
         Self {
             value_kelvin: match unit {
@@ -45,6 +51,13 @@ impl Temp {
 impl Default for Temp {
     fn default() -> Self {
         Self { value_kelvin: 0.0 }
+    }
+}
+
+impl Debug for Temp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let debug_unit = TemperatureUnit::Celsius;
+        write!(f, "{} {}", self.to_unit(debug_unit), debug_unit.suffix())
     }
 }
 
@@ -98,7 +111,7 @@ impl ops::Div<Temp> for Temp {
 }
 
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct TempRange {
     pub min: Temp,
     pub max: Temp,
@@ -112,6 +125,35 @@ impl TempRange {
     pub fn factor(&self, temp: Temp) -> f32 {
         (temp.value_kelvin - self.min.value_kelvin)
             / (self.max.value_kelvin - self.min.value_kelvin)
+    }
+
+    pub fn contains(&self, temp: Temp) -> bool {
+        temp.value_kelvin >= self.min.value_kelvin && temp.value_kelvin <= self.max.value_kelvin
+    }
+
+    pub fn contains_range(&self, range: TempRange) -> bool {
+        self.contains(range.min) && self.contains(range.max)
+    }
+
+    pub fn animate(&self, target: TempRange, factor: f32) -> TempRange {
+        TempRange {
+            min: Temp::new(
+                self.min.value_kelvin + (target.min.value_kelvin - self.min.value_kelvin) * factor,
+            ),
+            max: Temp::new(
+                self.max.value_kelvin + (target.max.value_kelvin - self.max.value_kelvin) * factor,
+            ),
+        }
+    }
+
+    pub fn diff(&self) -> Temp {
+        self.max - self.min
+    }
+}
+
+impl Debug for TempRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{:?} - {:?}]", self.min, self.max)
     }
 }
 

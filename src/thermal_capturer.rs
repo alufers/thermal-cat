@@ -9,6 +9,7 @@ use eframe::epaint::{Color32, ColorImage, Pos2, Rect};
 use nokhwa::{pixel_format::RgbFormat, Camera};
 
 use crate::{
+    auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
     temperature::{Temp, TempRange, TemperatureUnit},
     thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENTS},
@@ -48,6 +49,7 @@ struct ThermalCapturerCtx {
     gradient: ThermalGradient,
     adapter: Arc<dyn CameraAdapter>,
     range_settings: ThermalCapturerRangeSettings,
+    auto_range_controller: AutoDisplayRangeController,
 }
 
 ///
@@ -74,6 +76,7 @@ impl ThermalCapturer {
                         Temp::from_unit(TemperatureUnit::Celsius, 100.0),
                     ),
                 },
+                auto_range_controller: AutoDisplayRangeController::new(),
             }),
             cmd_writer,
         }
@@ -95,25 +98,21 @@ impl ThermalCapturer {
 
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();
 
-                let mut min_temp = thermal_data.temperature_at(mintemp_pos.x, mintemp_pos.y);
-                let mut max_temp = thermal_data.temperature_at(maxtemp_pos.x, maxtemp_pos.y);
+                let captured_range = TempRange::new(
+                    thermal_data.temperature_at(mintemp_pos.x, mintemp_pos.y),
+                    thermal_data.temperature_at(maxtemp_pos.x, maxtemp_pos.y),
+                );
 
-                if !ctx.range_settings.auto_range {
-                    min_temp = ctx.range_settings.range.min;
-                    max_temp = ctx.range_settings.range.max;
-                    
-                }
-
-                let image = thermal_data.map_to_image(|temp| {
-                    ctx.gradient
-                        .get_color((temp - min_temp) / (max_temp - min_temp))
-                });
+                let computed_range = ctx.auto_range_controller.compute(captured_range);
+                
+                let image = thermal_data
+                    .map_to_image(|temp| ctx.gradient.get_color(computed_range.factor(temp)));
 
                 (ctx.callback)(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
-                    range: TempRange::new(min_temp, max_temp),
+                    range: computed_range,
                 });
                 match ctx.cmd_reader.try_recv() {
                     Ok(cmd) => match cmd {

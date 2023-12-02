@@ -1,8 +1,8 @@
-use std::{
-    sync::{Arc, Mutex},
-};
+#![feature(let_chains)]
 
-use log::{error};
+use std::sync::{Arc, Mutex};
+
+use log::error;
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
@@ -17,7 +17,7 @@ use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSe
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
-use temperature_edit_field::{temperature_range_edit_field};
+use temperature_edit_field::temperature_range_edit_field;
 
 mod auto_display_range_controller;
 mod camera_adapter;
@@ -64,11 +64,12 @@ struct ThermalViewerApp {
 
     preview_zoom: f32,
     camera_texture: Option<egui::TextureHandle>,
-    incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
     thermal_capturer_settings: ThermalCapturerSettings,
 
     gradient_selector: GradientSelectorView,
+
+    last_thermal_capturer_result: Option<Box<ThermalCapturerResult>>,
 }
 
 impl ThermalViewerApp {
@@ -81,10 +82,7 @@ impl ThermalViewerApp {
     fn open_selected_camera(&mut self, ctx: &egui::Context) {
         if let Some(adapter) = self.selected_camera_info().and_then(|i| i.adapter.as_ref()) {
             let cloned_ctx = ctx.clone();
-            let cloned_incoming_image = self.incoming_image.clone();
             let cloned_adapter = adapter.clone();
-
-           
 
             let _ = Camera::new(
                 self.selected_camera_index.clone(),
@@ -95,11 +93,8 @@ impl ThermalViewerApp {
                 self.thermal_capturer_inst = Some(ThermalCapturer::new(
                     cam,
                     cloned_adapter,
-                    Arc::new(move |result: ThermalCapturerResult| {
-                        cloned_incoming_image.lock().unwrap().replace(result.image);
-                        cloned_ctx.request_repaint();
-
-                        // *cloned_range.lock().unwrap() = result.range;
+                    Arc::new(move || {
+                        cloned_ctx.request_repaint(); // repaint so that the result can be read out
                     }),
                 ))
                 .and_then(|mut capturer| {
@@ -114,6 +109,13 @@ impl ThermalViewerApp {
                 Err(err)
             });
         }
+    }
+
+    fn preferred_temperature_unit(&self) -> TemperatureUnit {
+        self.prefs
+            .as_ref()
+            .map(|p| p.temperature_unit)
+            .unwrap_or_default()
     }
 }
 
@@ -136,7 +138,6 @@ impl Default for ThermalViewerApp {
             thermal_capturer_inst: None,
             camera_texture: None,
             open_camera_error: None,
-            incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
             gradient_selector: GradientSelectorView::new(),
 
@@ -148,6 +149,7 @@ impl Default for ThermalViewerApp {
                 ),
                 gradient: thermal_gradient::THERMAL_GRADIENTS[0].clone(),
             },
+            last_thermal_capturer_result: None,
         }
     }
 }
@@ -163,6 +165,13 @@ impl eframe::App for ThermalViewerApp {
             );
             if self.prefs.as_ref().unwrap().auto_open_camera {
                 self.open_selected_camera(ctx);
+            }
+        }
+
+        if let Some(capturer) = self.thermal_capturer_inst.as_mut() {
+            // Handle thermal capturer commands
+            while let Ok(cmd) = capturer.result_receiver.try_recv() {
+                self.last_thermal_capturer_result = Some(cmd);
             }
         }
         self.user_preferences_window
@@ -244,7 +253,17 @@ impl eframe::App for ThermalViewerApp {
 
             ui.separator();
 
-            if ui.checkbox(&mut self.thermal_capturer_settings.auto_range, "Auto Range").changed() {
+            if ui
+                .checkbox(&mut self.thermal_capturer_settings.auto_range, "Auto Range")
+                .changed()
+            {
+                // auto range has been disabled, copy the current range to the manual range
+                if  !self.thermal_capturer_settings.auto_range {
+                    self.last_thermal_capturer_result.as_ref().and_then(|res| {
+                        self.thermal_capturer_settings.manual_range = res.range;
+                        Some(())
+                    });
+                }
                 if self.thermal_capturer_inst.is_some() {
                     self.thermal_capturer_inst
                         .as_mut()
@@ -252,17 +271,25 @@ impl eframe::App for ThermalViewerApp {
                         .set_settings(self.thermal_capturer_settings.clone());
                 }
             }
-
+            // copy of the range to pass to the edit field 
+            // (it will not be modified if auto_range is enabled, because the field is disabled)
+            let mut range_copy; 
             if temperature_range_edit_field(
                 ui,
                 "range",
                 !self.thermal_capturer_settings.auto_range,
-                self.prefs
-                    .as_ref()
-                    .map(|p| p.temperature_unit)
-                    .unwrap_or_default(),
-                &mut self.thermal_capturer_settings.manual_range,
-            ).changed() {
+                self.preferred_temperature_unit(),
+                if let Some(result) = self.last_thermal_capturer_result.as_ref()
+                    && (self.thermal_capturer_settings.auto_range)
+                {
+                    range_copy = result.range;
+                    &mut range_copy
+                } else {
+                    &mut self.thermal_capturer_settings.manual_range
+                },
+            )
+            .changed()
+            {
                 if self.thermal_capturer_inst.is_some() {
                     self.thermal_capturer_inst
                         .as_mut()
@@ -273,8 +300,12 @@ impl eframe::App for ThermalViewerApp {
 
             ui.separator();
 
-            if self.gradient_selector.draw(ui, &mut self.thermal_capturer_settings.gradient).changed() && self.thermal_capturer_inst.is_some() {
-              
+            if self
+                .gradient_selector
+                .draw(ui, &mut self.thermal_capturer_settings.gradient)
+                .changed()
+                && self.thermal_capturer_inst.is_some()
+            {
                 self.thermal_capturer_inst
                     .as_mut()
                     .unwrap()
@@ -291,15 +322,11 @@ impl eframe::App for ThermalViewerApp {
                 }
             }
             ui.centered_and_justified(|ui| {
-                self.incoming_image
-                    .lock()
-                    .unwrap()
-                    .as_mut()
-                    .and_then(|image| {
-                        self.camera_texture =
-                            Some(ctx.load_texture("cam_ctx", image.clone(), Default::default()));
-                        Some(())
-                    });
+                self.last_thermal_capturer_result.as_mut().and_then(|res| {
+                    self.camera_texture =
+                        Some(ctx.load_texture("cam_ctx", res.image.clone(), Default::default()));
+                    Some(())
+                });
                 self.camera_texture.as_ref().and_then(|texture| {
                     ui.add(
                         egui::Image::new(texture)

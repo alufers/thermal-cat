@@ -4,8 +4,8 @@ use std::{
     thread,
 };
 
-use eframe::epaint::{ColorImage};
-use nokhwa::{Camera};
+use eframe::epaint::ColorImage;
+use nokhwa::Camera;
 
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
@@ -29,12 +29,7 @@ pub struct ThermalCapturerSettings {
     pub gradient: ThermalGradient,
 }
 
-pub type ThermalCapturerCallback = Arc<dyn Fn(ThermalCapturerResult) + Send + Sync>;
-
-pub struct ThermalCapturer {
-    ctx: Option<ThermalCapturerCtx>,
-    cmd_writer: mpsc::Sender<ThermalCapturerCmd>,
-}
+pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
@@ -44,10 +39,18 @@ enum ThermalCapturerCmd {
 struct ThermalCapturerCtx {
     camera: Camera,
     callback: ThermalCapturerCallback,
-    cmd_reader: mpsc::Receiver<ThermalCapturerCmd>,
+    cmd_receiver: mpsc::Receiver<ThermalCapturerCmd>,
+    result_sender: mpsc::Sender<Box<ThermalCapturerResult>>,
     adapter: Arc<dyn CameraAdapter>,
     settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
+}
+
+pub struct ThermalCapturer {
+    ctx: Option<ThermalCapturerCtx>,
+    cmd_sender: mpsc::Sender<ThermalCapturerCmd>,
+
+    pub result_receiver: mpsc::Receiver<Box<ThermalCapturerResult>>,
 }
 
 ///
@@ -59,13 +62,15 @@ impl ThermalCapturer {
         adapter: Arc<dyn CameraAdapter>,
         callback: ThermalCapturerCallback,
     ) -> Self {
-        let (cmd_writer, cmd_reader) = mpsc::channel();
+        let (cmd_sender, cmd_receiver) = mpsc::channel();
+        let (result_sender, result_receiver) = mpsc::channel();
         Self {
             ctx: Some(ThermalCapturerCtx {
                 camera,
                 adapter,
                 callback,
-                cmd_reader,
+                cmd_receiver,
+                result_sender,
                 settings: ThermalCapturerSettings {
                     auto_range: true,
                     manual_range: TempRange::new(
@@ -76,7 +81,8 @@ impl ThermalCapturer {
                 },
                 auto_range_controller: AutoDisplayRangeController::new(),
             }),
-            cmd_writer,
+            cmd_sender,
+            result_receiver,
         }
     }
 
@@ -87,7 +93,7 @@ impl ThermalCapturer {
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
 
-            let mut last_frame_time ;
+            let mut last_frame_time;
             let infiray = InfirayP2ProAdapter {};
             loop {
                 last_frame_time = std::time::Instant::now();
@@ -106,17 +112,19 @@ impl ThermalCapturer {
                 if !ctx.settings.auto_range {
                     mapping_range = ctx.settings.manual_range;
                 }
-                
-                let image = thermal_data
-                    .map_to_image(|temp| ctx.settings.gradient.get_color(mapping_range.factor(temp)));
 
-                (ctx.callback)(ThermalCapturerResult {
+                let image = thermal_data.map_to_image(|temp| {
+                    ctx.settings.gradient.get_color(mapping_range.factor(temp))
+                });
+                let result = Box::new(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
                     range: mapping_range,
                 });
-                match ctx.cmd_reader.try_recv() {
+                ctx.result_sender.send(result).unwrap();
+                (ctx.callback)();
+                match ctx.cmd_receiver.try_recv() {
                     Ok(cmd) => match cmd {
                         ThermalCapturerCmd::Stop => {
                             ctx.camera.stop_stream().unwrap();
@@ -132,7 +140,7 @@ impl ThermalCapturer {
         });
     }
     pub fn set_settings(&mut self, settings: ThermalCapturerSettings) {
-        self.cmd_writer
+        self.cmd_sender
             .send(ThermalCapturerCmd::SetSettings(settings))
             .unwrap();
     }
@@ -140,6 +148,6 @@ impl ThermalCapturer {
 
 impl Drop for ThermalCapturer {
     fn drop(&mut self) {
-        self.cmd_writer.send(ThermalCapturerCmd::Stop).unwrap();
+        self.cmd_sender.send(ThermalCapturerCmd::Stop).unwrap();
     }
 }

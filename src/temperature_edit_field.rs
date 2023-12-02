@@ -7,6 +7,7 @@ pub fn temperature_edit_field(ui: &mut Ui, unit: TemperatureUnit, value: &mut Te
     let res = ui.add(
         DragValue::new(&mut tmp_value)
             .speed(0.5)
+            .max_decimals(1)
             .suffix(unit.suffix()),
     );
     *value = Temp::from_unit(unit, tmp_value);

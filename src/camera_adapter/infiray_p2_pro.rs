@@ -23,7 +23,10 @@ pub struct InfirayP2ProAdapter {
 // - A 256x192 YUYV stream with greyscale representation of the thermal data (the scale changes depending on the temperature range)
 // - A 256x348 YUYV stream with the same greyscale thermal data on top, and 256x156 uint16 thermal data underneath
 //
-// THe uint16 thermal data is a 256x192 array of 16-bit unsigned integers, representing the temperature in 1/64th's Kelvin
+// We are interested in the bottom part of the second stream, which contains the raw thermal data.
+//
+// The uint16 thermal data is a 256x192 array of 16-bit unsigned integers, representing the temperature in 1/64th's Kelvin
+//
 impl CameraAdapter for InfirayP2ProAdapter {
 
     fn name(&self) -> String {

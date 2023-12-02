@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 use anyhow::Result;
 
-use crate::temperature_unit::TemperatureUnit;
+use crate::temperature::TemperatureUnit;
 
 const MAX_KNOWN_PREFERENCES_VERSION: u32 = 1;
 

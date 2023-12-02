@@ -14,6 +14,7 @@ use eframe::{
     egui::{self, Button, Id, Response},
     epaint::{text::LayoutJob, ColorImage, Vec2},
 };
+use temperature::{TempRange, Temp, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
@@ -24,7 +25,7 @@ mod camera_adapter;
 mod camera_enumerator;
 mod gradient_selector_widget;
 mod temperature_edit_field;
-mod temperature_unit;
+mod temperature;
 mod thermal_capturer;
 mod thermal_data;
 mod thermal_gradient;
@@ -67,8 +68,7 @@ struct ThermalViewerApp {
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
     auto_range: bool,
-    range_min: Arc<Mutex<f32>>,
-    range_max: Arc<Mutex<f32>>,
+    range: Arc<Mutex<TempRange>>,
 
     gradient_selector: GradientSelectorView,
 }
@@ -86,8 +86,8 @@ impl ThermalViewerApp {
             let cloned_incoming_image = self.incoming_image.clone();
             let cloned_adapter = adapter.clone();
 
-            let cloned_range_min = self.range_min.clone();
-            let cloned_range_max = self.range_max.clone();
+            let cloned_range = self.range.clone();
+          
             let _ = Camera::new(
                 self.selected_camera_index.clone(),
                 adapter.requested_format(),
@@ -101,8 +101,7 @@ impl ThermalViewerApp {
                         cloned_incoming_image.lock().unwrap().replace(result.image);
                         cloned_ctx.request_repaint();
                         
-                        *cloned_range_min.lock().unwrap() = result.range_min;
-                        *cloned_range_max.lock().unwrap() = result.range_max;
+                        *cloned_range.lock().unwrap() = result.range;
                       
                     }),
                 ))
@@ -144,8 +143,13 @@ impl Default for ThermalViewerApp {
             preview_zoom: 1.0,
             gradient_selector: GradientSelectorView::new(),
             auto_range: true,
-            range_min: Arc::new(Mutex::new(273.15)),
-            range_max: Arc::new(Mutex::new(273.15 + 60.0)),
+            range: Arc::new(Mutex::new(
+                TempRange::new(
+                    Temp::from_unit(TemperatureUnit::Celsius, 0.0),
+                    Temp::from_unit(TemperatureUnit::Celsius, 100.0),
+                )
+            )),
+           
         }
     }
 }
@@ -254,7 +258,7 @@ impl eframe::App for ThermalViewerApp {
                         .as_ref()
                         .map(|p| p.temperature_unit)
                         .unwrap_or_default(),
-                    &mut self.range_min.lock().unwrap(),
+                    &mut self.range.lock().unwrap().min,
                 );
 
                 temperature_edit_field(
@@ -263,7 +267,7 @@ impl eframe::App for ThermalViewerApp {
                         .as_ref()
                         .map(|p| p.temperature_unit)
                         .unwrap_or_default(),
-                        &mut self.range_max.lock().unwrap(),
+                        &mut self.range.lock().unwrap().max,
                 );
                 ui.end_row();
             });

@@ -1,4 +1,4 @@
-use crate::{temperature_unit::TemperatureUnit, user_preferences::UserPreferences};
+use crate::{temperature::TemperatureUnit, user_preferences::UserPreferences};
 use eframe::egui::{self, Button, Grid, Ui, ViewportBuilder, ViewportClass, ViewportId};
 use log::error;
 use strum::IntoEnumIterator;

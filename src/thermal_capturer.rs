@@ -10,6 +10,7 @@ use nokhwa::{pixel_format::RgbFormat, Camera};
 
 use crate::{
     camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
+    temperature::{Temp, TempRange, TemperatureUnit},
     thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENTS},
 };
 
@@ -17,15 +18,14 @@ pub struct ThermalCapturerResult {
     pub image: ColorImage,
     pub real_fps: f32,
     pub reported_fps: f32,
-    pub range_min: f32,
-    pub range_max: f32,
+
+    pub range: TempRange,
 }
 
 #[derive(Clone)]
 pub struct ThermalCapturerRangeSettings {
     pub auto_range: bool,
-    pub min_temp: f32,
-    pub max_temp: f32,
+    pub range: TempRange,
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn(ThermalCapturerResult) + Send + Sync>;
@@ -69,8 +69,10 @@ impl ThermalCapturer {
                 gradient: THERMAL_GRADIENTS[0].clone(),
                 range_settings: ThermalCapturerRangeSettings {
                     auto_range: true,
-                    min_temp: 0.0,
-                    max_temp: 100.0,
+                    range: TempRange::new(
+                        Temp::from_unit(TemperatureUnit::Celsius, 0.0),
+                        Temp::from_unit(TemperatureUnit::Celsius, 100.0),
+                    ),
                 },
             }),
             cmd_writer,
@@ -97,8 +99,9 @@ impl ThermalCapturer {
                 let mut max_temp = thermal_data.temperature_at(maxtemp_pos.x, maxtemp_pos.y);
 
                 if !ctx.range_settings.auto_range {
-                    min_temp = ctx.range_settings.min_temp;
-                    max_temp = ctx.range_settings.max_temp;
+                    min_temp = ctx.range_settings.range.min;
+                    max_temp = ctx.range_settings.range.max;
+                    
                 }
 
                 let image = thermal_data.map_to_image(|temp| {
@@ -110,8 +113,7 @@ impl ThermalCapturer {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
-                    range_min: min_temp,
-                    range_max: max_temp,
+                    range: TempRange::new(min_temp, max_temp),
                 });
                 match ctx.cmd_reader.try_recv() {
                     Ok(cmd) => match cmd {

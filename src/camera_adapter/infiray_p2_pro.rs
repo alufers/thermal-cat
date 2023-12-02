@@ -5,7 +5,7 @@ use nokhwa::{
     utils::{CameraFormat, FrameFormat, RequestedFormat, RequestedFormatType, Resolution}, NokhwaError,
 };
 
-use crate::thermal_data::ThermalData;
+use crate::{thermal_data::ThermalData, temperature::Temp};
 
 use super::CameraAdapter;
 
@@ -64,7 +64,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
         Ok::<ThermalData, NokhwaError>(ThermalData::new(
             IMAGE_WIDTH as usize,
             IMAGE_HEIGHT as usize,
-            u16_temperature_data.iter().map(|&x| x as f32 / 64.0).collect(),
+            u16_temperature_data.iter().map(|&x| Temp::new(x as f32 / 64.0)).collect(),
         ))
 
     }

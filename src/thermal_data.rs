@@ -1,5 +1,7 @@
 use eframe::epaint::{Color32, ColorImage};
 
+use crate::temperature::Temp;
+
 
 #[derive(Clone)]
 pub struct ThermalData {
@@ -10,7 +12,7 @@ pub struct ThermalData {
     pub height: usize,
 
     // Temperature data in degrees Kelvin
-    pub data: Vec<f32>,
+    pub data: Vec<Temp>,
 }
 
 pub struct ThermalDataPos {
@@ -28,7 +30,7 @@ impl Default for ThermalDataPos {
 }
 
 impl ThermalData {
-    pub fn new(width: usize, height: usize, data: Vec<f32>) -> Self {
+    pub fn new(width: usize, height: usize, data: Vec<Temp>) -> Self {
         Self {
             width,
             height,
@@ -37,12 +39,12 @@ impl ThermalData {
     }
 
     #[inline(always)]
-    pub fn temperature_at(&self, x: usize, y: usize) -> f32 {
+    pub fn temperature_at(&self, x: usize, y: usize) -> Temp {
         self.data[y * self.width + x]
     }
 
     #[inline(always)]
-    pub fn map_to_image<F: Fn(f32) -> Color32>(&self, callback: F) -> ColorImage {
+    pub fn map_to_image<F: Fn(Temp) -> Color32>(&self, callback: F) -> ColorImage {
         let mut img = ColorImage::new([self.width, self.height], Color32::BLACK);
         for (i, pixel) in img.pixels.iter_mut().enumerate() {
             let x = i % self.width;
@@ -57,8 +59,8 @@ impl ThermalData {
     pub fn get_min_max_pos(&self) -> (ThermalDataPos, ThermalDataPos) {
         let mut min_pos = ThermalDataPos::default();
         let mut max_pos = ThermalDataPos::default();
-        let mut min_temp = f32::MAX;
-        let mut max_temp = f32::MIN;
+        let mut min_temp = Temp::MAX;
+        let mut max_temp = Temp::MIN;
         for (i, pixel) in self.data.iter().enumerate() {
             let x = i % self.width;
             let y = i / self.width;

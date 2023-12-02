@@ -14,24 +14,24 @@ use eframe::{
     egui::{self, Button, Id, Response},
     epaint::{text::LayoutJob, ColorImage, Vec2},
 };
-use temperature::{TempRange, Temp, TemperatureUnit};
-use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
+use temperature::{Temp, TempRange, TemperatureUnit};
+use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
 use temperature_edit_field::{temperature_edit_field, temperature_range_edit_field};
 
+mod auto_display_range_controller;
 mod camera_adapter;
 mod camera_enumerator;
 mod gradient_selector_widget;
-mod temperature_edit_field;
 mod temperature;
+mod temperature_edit_field;
 mod thermal_capturer;
 mod thermal_data;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
-mod auto_display_range_controller;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -68,8 +68,7 @@ struct ThermalViewerApp {
     camera_texture: Option<egui::TextureHandle>,
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
-    auto_range: bool,
-    range: Arc<Mutex<TempRange>>,
+    thermal_capturer_settings: ThermalCapturerSettings,
 
     gradient_selector: GradientSelectorView,
 }
@@ -87,8 +86,8 @@ impl ThermalViewerApp {
             let cloned_incoming_image = self.incoming_image.clone();
             let cloned_adapter = adapter.clone();
 
-            let cloned_range = self.range.clone();
-          
+           
+
             let _ = Camera::new(
                 self.selected_camera_index.clone(),
                 adapter.requested_format(),
@@ -101,9 +100,8 @@ impl ThermalViewerApp {
                     Arc::new(move |result: ThermalCapturerResult| {
                         cloned_incoming_image.lock().unwrap().replace(result.image);
                         cloned_ctx.request_repaint();
-                        
-                        *cloned_range.lock().unwrap() = result.range;
-                      
+
+                        // *cloned_range.lock().unwrap() = result.range;
                     }),
                 ))
                 .and_then(|mut capturer| {
@@ -143,14 +141,15 @@ impl Default for ThermalViewerApp {
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
             gradient_selector: GradientSelectorView::new(),
-            auto_range: true,
-            range: Arc::new(Mutex::new(
-                TempRange::new(
+
+            thermal_capturer_settings: ThermalCapturerSettings {
+                auto_range: true,
+                manual_range: TempRange::new(
                     Temp::from_unit(TemperatureUnit::Celsius, 0.0),
-                    Temp::from_unit(TemperatureUnit::Celsius, 100.0),
-                )
-            )),
-           
+                    Temp::from_unit(TemperatureUnit::Celsius, 50.0),
+                ),
+                gradient: thermal_gradient::THERMAL_GRADIENTS[0].clone(),
+            },
         }
     }
 }
@@ -247,27 +246,41 @@ impl eframe::App for ThermalViewerApp {
 
             ui.separator();
 
-            ui.checkbox(&mut self.auto_range, "Auto Range");
+            if ui.checkbox(&mut self.thermal_capturer_settings.auto_range, "Auto Range").changed() {
+                if self.thermal_capturer_inst.is_some() {
+                    self.thermal_capturer_inst
+                        .as_mut()
+                        .unwrap()
+                        .set_settings(self.thermal_capturer_settings.clone());
+                }
+            }
 
-            temperature_range_edit_field(
+            if temperature_range_edit_field(
                 ui,
                 "range",
-                !self.auto_range,
+                !self.thermal_capturer_settings.auto_range,
                 self.prefs
                     .as_ref()
                     .map(|p| p.temperature_unit)
                     .unwrap_or_default(),
-                &mut self.range.lock().unwrap(),
-            );
-
+                &mut self.thermal_capturer_settings.manual_range,
+            ).changed() {
+                if self.thermal_capturer_inst.is_some() {
+                    self.thermal_capturer_inst
+                        .as_mut()
+                        .unwrap()
+                        .set_settings(self.thermal_capturer_settings.clone());
+                }
+            }
 
             ui.separator();
 
-            if self.gradient_selector.draw(ui).changed() && self.thermal_capturer_inst.is_some() {
+            if self.gradient_selector.draw(ui, &mut self.thermal_capturer_settings.gradient).changed() && self.thermal_capturer_inst.is_some() {
+              
                 self.thermal_capturer_inst
                     .as_mut()
                     .unwrap()
-                    .set_gradient(self.gradient_selector.selected_gradient().clone());
+                    .set_settings(self.thermal_capturer_settings.clone());
             }
         });
 

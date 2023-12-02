@@ -1,9 +1,13 @@
 use env_logger::fmt::Formatter;
 use serde::{Deserialize, Serialize};
 // 0.17.1
-use strum_macros::{EnumIter, Display}; // 0.17.1
+use strum_macros::{Display, EnumIter}; // 0.17.1
 
-use std::{ops, path::Display, fmt::{Debug, self}};
+use std::{
+    fmt::{self, Debug},
+    ops,
+    path::Display,
+};
 
 //
 // Represents a temperature in Kelvin.
@@ -12,7 +16,6 @@ use std::{ops, path::Display, fmt::{Debug, self}};
 pub struct Temp {
     value_kelvin: f32,
 }
-
 
 impl Temp {
     pub const ZERO: Temp = Temp { value_kelvin: 0.0 };
@@ -103,13 +106,12 @@ impl ops::Div<f32> for Temp {
 
 impl ops::Div<Temp> for Temp {
     // Dividing two temperatures gives a ratio, which is a unitless value.
-    type Output = f32; 
+    type Output = f32;
 
     fn div(self, rhs: Temp) -> Self::Output {
         self.value_kelvin / rhs.value_kelvin
     }
 }
-
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct TempRange {
@@ -156,9 +158,6 @@ impl Debug for TempRange {
         write!(f, "[{:?} - {:?}]", self.min, self.max)
     }
 }
-
-
-
 
 #[derive(EnumIter, Display, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TemperatureUnit {

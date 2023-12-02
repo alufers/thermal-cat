@@ -24,9 +24,10 @@ pub struct ThermalCapturerResult {
 }
 
 #[derive(Clone)]
-pub struct ThermalCapturerRangeSettings {
+pub struct ThermalCapturerSettings {
     pub auto_range: bool,
-    pub range: TempRange,
+    pub manual_range: TempRange,
+    pub gradient: ThermalGradient,
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn(ThermalCapturerResult) + Send + Sync>;
@@ -37,8 +38,7 @@ pub struct ThermalCapturer {
 }
 
 enum ThermalCapturerCmd {
-    SetGradient(ThermalGradient),
-    SetRangeSettings(ThermalCapturerRangeSettings),
+    SetSettings(ThermalCapturerSettings),
     Stop,
 }
 
@@ -46,9 +46,8 @@ struct ThermalCapturerCtx {
     camera: Camera,
     callback: ThermalCapturerCallback,
     cmd_reader: mpsc::Receiver<ThermalCapturerCmd>,
-    gradient: ThermalGradient,
     adapter: Arc<dyn CameraAdapter>,
-    range_settings: ThermalCapturerRangeSettings,
+    settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
 }
 
@@ -68,13 +67,13 @@ impl ThermalCapturer {
                 adapter,
                 callback,
                 cmd_reader,
-                gradient: THERMAL_GRADIENTS[0].clone(),
-                range_settings: ThermalCapturerRangeSettings {
+                settings: ThermalCapturerSettings {
                     auto_range: true,
-                    range: TempRange::new(
+                    manual_range: TempRange::new(
                         Temp::from_unit(TemperatureUnit::Celsius, 0.0),
                         Temp::from_unit(TemperatureUnit::Celsius, 100.0),
                     ),
+                    gradient: THERMAL_GRADIENTS[0].clone(),
                 },
                 auto_range_controller: AutoDisplayRangeController::new(),
             }),
@@ -103,16 +102,20 @@ impl ThermalCapturer {
                     thermal_data.temperature_at(maxtemp_pos.x, maxtemp_pos.y),
                 );
 
-                let computed_range = ctx.auto_range_controller.compute(captured_range);
+                let mut mapping_range = ctx.auto_range_controller.compute(captured_range);
+
+                if !ctx.settings.auto_range {
+                    mapping_range = ctx.settings.manual_range;
+                }
                 
                 let image = thermal_data
-                    .map_to_image(|temp| ctx.gradient.get_color(computed_range.factor(temp)));
+                    .map_to_image(|temp| ctx.settings.gradient.get_color(mapping_range.factor(temp)));
 
                 (ctx.callback)(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
-                    range: computed_range,
+                    range: mapping_range,
                 });
                 match ctx.cmd_reader.try_recv() {
                     Ok(cmd) => match cmd {
@@ -120,11 +123,8 @@ impl ThermalCapturer {
                             ctx.camera.stop_stream().unwrap();
                             break;
                         }
-                        ThermalCapturerCmd::SetGradient(gradient) => {
-                            ctx.gradient = gradient;
-                        }
-                        ThermalCapturerCmd::SetRangeSettings(range_settings) => {
-                            ctx.range_settings = range_settings;
+                        ThermalCapturerCmd::SetSettings(range_settings) => {
+                            ctx.settings = range_settings;
                         }
                     },
                     Err(_) => {}
@@ -132,15 +132,9 @@ impl ThermalCapturer {
             }
         });
     }
-
-    pub fn set_gradient(&mut self, gradient: ThermalGradient) {
+    pub fn set_settings(&mut self, settings: ThermalCapturerSettings) {
         self.cmd_writer
-            .send(ThermalCapturerCmd::SetGradient(gradient))
-            .unwrap();
-    }
-    pub fn set_range_settings(&mut self, range_settings: ThermalCapturerRangeSettings) {
-        self.cmd_writer
-            .send(ThermalCapturerCmd::SetRangeSettings(range_settings))
+            .send(ThermalCapturerCmd::SetSettings(settings))
             .unwrap();
     }
 }

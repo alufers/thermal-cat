@@ -20,23 +20,31 @@ pub fn temperature_range_edit_field(
     unit: TemperatureUnit,
     value: &mut TempRange,
 ) -> Response {
-    egui::Grid::new(id_source)
+    let mut did_change = false;
+    let mut resp = egui::Grid::new(id_source)
         .show(ui, |ui| {
             ui.set_enabled(enabled);
             ui.label("Min");
             ui.label("Max");
             ui.end_row();
             if temperature_edit_field(ui, unit, &mut value.min).changed() {
+                did_change = true;
                 if value.min > value.max {
                     value.max = value.min;
                 }
             }
             if temperature_edit_field(ui, unit, &mut value.max).changed() {
+                did_change = true;
                 if value.max < value.min {
                     value.min = value.max;
                 }
             }
             ui.end_row();
         })
-        .response
+        .response;
+
+    if did_change {
+        resp.mark_changed();
+    }
+    resp
 }

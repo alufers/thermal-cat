@@ -18,9 +18,12 @@ use thermal_capturer::{ThermalCapturer, ThermalCapturerResult};
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
+use temperature_edit_field::temperature_edit_field;
+
 mod camera_adapter;
 mod camera_enumerator;
 mod gradient_selector_widget;
+mod temperature_edit_field;
 mod temperature_unit;
 mod thermal_capturer;
 mod thermal_data;
@@ -63,6 +66,10 @@ struct ThermalViewerApp {
     camera_texture: Option<egui::TextureHandle>,
     incoming_image: Arc<Mutex<Option<ColorImage>>>,
 
+    auto_range: bool,
+    range_min: Arc<Mutex<f32>>,
+    range_max: Arc<Mutex<f32>>,
+
     gradient_selector: GradientSelectorView,
 }
 
@@ -79,6 +86,8 @@ impl ThermalViewerApp {
             let cloned_incoming_image = self.incoming_image.clone();
             let cloned_adapter = adapter.clone();
 
+            let cloned_range_min = self.range_min.clone();
+            let cloned_range_max = self.range_max.clone();
             let _ = Camera::new(
                 self.selected_camera_index.clone(),
                 adapter.requested_format(),
@@ -91,6 +100,10 @@ impl ThermalViewerApp {
                     Arc::new(move |result: ThermalCapturerResult| {
                         cloned_incoming_image.lock().unwrap().replace(result.image);
                         cloned_ctx.request_repaint();
+                        
+                        *cloned_range_min.lock().unwrap() = result.range_min;
+                        *cloned_range_max.lock().unwrap() = result.range_max;
+                      
                     }),
                 ))
                 .and_then(|mut capturer| {
@@ -130,6 +143,9 @@ impl Default for ThermalViewerApp {
             incoming_image: Arc::new(Mutex::new(None)),
             preview_zoom: 1.0,
             gradient_selector: GradientSelectorView::new(),
+            auto_range: true,
+            range_min: Arc::new(Mutex::new(273.15)),
+            range_max: Arc::new(Mutex::new(273.15 + 60.0)),
         }
     }
 }
@@ -223,6 +239,34 @@ impl eframe::App for ThermalViewerApp {
             if let Some(error) = &self.open_camera_error {
                 ui.colored_label(egui::Color32::RED, error);
             }
+
+            ui.separator();
+
+            ui.checkbox(&mut self.auto_range, "Auto Range");
+            egui::Grid::new("range_grid").show(ui, |ui| {
+                ui.set_enabled(!self.auto_range);
+                ui.label("Min");
+                ui.label("Max");
+                ui.end_row();
+                temperature_edit_field(
+                    ui,
+                    self.prefs
+                        .as_ref()
+                        .map(|p| p.temperature_unit)
+                        .unwrap_or_default(),
+                    &mut self.range_min.lock().unwrap(),
+                );
+
+                temperature_edit_field(
+                    ui,
+                    self.prefs
+                        .as_ref()
+                        .map(|p| p.temperature_unit)
+                        .unwrap_or_default(),
+                        &mut self.range_max.lock().unwrap(),
+                );
+                ui.end_row();
+            });
 
             ui.separator();
 

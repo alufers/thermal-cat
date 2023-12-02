@@ -9,6 +9,12 @@ pub enum TemperatureUnit {
     Fahrenheit,
 }
 
+impl Default for TemperatureUnit {
+    fn default() -> Self {
+        TemperatureUnit::Kelvin
+    }
+}
+
 impl TemperatureUnit {
     pub fn suffix(&self) -> String {
         match self {
@@ -23,6 +29,14 @@ impl TemperatureUnit {
             TemperatureUnit::Kelvin => kelvin,
             TemperatureUnit::Celsius => kelvin - 273.15,
             TemperatureUnit::Fahrenheit => (kelvin - 273.15) * 1.8 + 32.0,
+        }
+    }
+
+    pub fn to_kelvin(&self, value: f32) -> f32 {
+        match self {
+            TemperatureUnit::Kelvin => value,
+            TemperatureUnit::Celsius => value + 273.15,
+            TemperatureUnit::Fahrenheit => (value - 32.0) / 1.8 + 273.15,
         }
     }
 }

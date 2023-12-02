@@ -13,6 +13,20 @@ pub struct ThermalData {
     pub data: Vec<f32>,
 }
 
+pub struct ThermalDataPos {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl Default for ThermalDataPos {
+    fn default() -> Self {
+        Self {
+            x: 0,
+            y: 0,
+        }
+    }
+}
+
 impl ThermalData {
     pub fn new(width: usize, height: usize, data: Vec<f32>) -> Self {
         Self {
@@ -38,5 +52,28 @@ impl ThermalData {
 
         img
         
+    }
+
+    pub fn get_min_max_pos(&self) -> (ThermalDataPos, ThermalDataPos) {
+        let mut min_pos = ThermalDataPos::default();
+        let mut max_pos = ThermalDataPos::default();
+        let mut min_temp = f32::MAX;
+        let mut max_temp = f32::MIN;
+        for (i, pixel) in self.data.iter().enumerate() {
+            let x = i % self.width;
+            let y = i / self.width;
+            let temp = *pixel;
+            if temp < min_temp {
+                min_temp = temp;
+                min_pos.x = x;
+                min_pos.y = y;
+            }
+            if temp > max_temp {
+                max_temp = temp;
+                max_pos.x = x;
+                max_pos.y = y;
+            }
+        }
+        (min_pos, max_pos)
     }
 }

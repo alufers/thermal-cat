@@ -44,8 +44,8 @@ impl AutoDisplayRangeController {
             new_range_max_headroom: Temp::new(10.0),
             new_range_min_headroom: Temp::new(5.0),
 
-            shrink_range_max_headroom: Temp::new(15.0),
-            shrink_range_min_headroom: Temp::new(8.0),
+            shrink_range_max_headroom: Temp::new(5.0),
+            shrink_range_min_headroom: Temp::new(5.0),
             min_separation: Temp::new(40.0),
         }
     }

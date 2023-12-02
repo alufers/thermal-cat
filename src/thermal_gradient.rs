@@ -1,12 +1,13 @@
 use eframe::epaint::{Color32, ColorImage};
 
 use once_cell::sync::Lazy;
+use uuid::{Uuid, uuid};
 
 
 
 pub static THERMAL_GRADIENTS: Lazy<Vec<ThermalGradient>> = Lazy::new(|| {
     vec![
-        ThermalGradient::new("Cold-warm".to_string(), vec![
+        ThermalGradient::new(uuid!("1d6233d0-7f8e-47c1-b092-0831cf587610"), "Cold-warm".to_string(), vec![
             ThermalGradientPoint::from_rgbv(0, 0, 0, 0.0),
             ThermalGradientPoint::from_rgbv(0, 0, 255, 0.21),
             ThermalGradientPoint::from_rgbv(0, 255, 255, 0.24),
@@ -17,11 +18,11 @@ pub static THERMAL_GRADIENTS: Lazy<Vec<ThermalGradient>> = Lazy::new(|| {
             ThermalGradientPoint::from_rgbv(255, 0, 255, 0.71),
             ThermalGradientPoint::from_rgbv(255, 255, 255, 1.0),
         ]),
-        ThermalGradient::new("Black to white".to_string(), vec![
+        ThermalGradient::new(uuid!("6f2e8a5a-f38c-4347-9c23-2d9f2e7a4aae"), "Black to white".to_string(), vec![
             ThermalGradientPoint::from_rgbv(0, 0, 0, 0.0),
             ThermalGradientPoint::from_rgbv(255, 255, 255, 1.0),
         ]),
-        ThermalGradient::new("White to black".to_string(), vec![
+        ThermalGradient::new(uuid!("07943b0b-0e36-463c-8895-5befe69c69d9"), "White to black".to_string(), vec![
             ThermalGradientPoint::from_rgbv(255, 255, 255, 0.0),
             ThermalGradientPoint::from_rgbv(0, 0, 0, 1.0),
         ]),
@@ -49,12 +50,13 @@ impl ThermalGradientPoint {
 
 #[derive(Clone)]
 pub struct ThermalGradient {
+    pub uuid: Uuid,
     pub name: String,
     pub points: Vec<ThermalGradientPoint>,
 }
 impl ThermalGradient {
-    pub fn new(name: String, points: Vec<ThermalGradientPoint>) -> Self {
-        let mut me = Self { name, points };
+    pub fn new(uuid: Uuid, name: String, points: Vec<ThermalGradientPoint>) -> Self {
+        let mut me = Self { uuid, name, points };
         me.points
             .sort_by(|a, b| a.pos.partial_cmp(&b.pos).unwrap());
 

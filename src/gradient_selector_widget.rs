@@ -31,12 +31,9 @@ impl GradientSelectorView {
                 .collect();
         }
 
-        let mut selected_gradient_idx = THERMAL_GRADIENTS
-            .iter()
-            .position(|g| g as *const ThermalGradient == selected_gradient as *const ThermalGradient)
-            .unwrap_or(0);
+        let mut selected_gradient_uuid = selected_gradient.uuid;
 
-        let prev_selected_gradient_idx = selected_gradient_idx;
+        let prev_selected_gradient_uuid = selected_gradient_uuid;
         let mut resp = ui
             .vertical(|ui| {
                 ui.label("Select gradient");
@@ -51,8 +48,8 @@ impl GradientSelectorView {
                             .enumerate()
                             .for_each(|(i, gradient)| {
                                 ui.radio_value(
-                                    &mut selected_gradient_idx,
-                                    i,
+                                    &mut selected_gradient_uuid,
+                                    gradient.uuid,
                                     gradient.name.clone(),
                                 );
                                 if ui
@@ -62,7 +59,7 @@ impl GradientSelectorView {
                                     )
                                     .clicked()
                                 {
-                                    selected_gradient_idx = i;
+                                    selected_gradient_uuid = gradient.uuid;
                                 }
                                 ui.end_row();
                             });
@@ -70,13 +67,13 @@ impl GradientSelectorView {
             })
             .response;
 
-        if prev_selected_gradient_idx != selected_gradient_idx {
+        *selected_gradient = THERMAL_GRADIENTS
+            .iter()
+            .find(|gradient| gradient.uuid == selected_gradient_uuid)
+            .unwrap()
+            .clone();
+        if prev_selected_gradient_uuid != selected_gradient_uuid {
             resp.mark_changed();
-            println!(
-                "Gradient changed to {}",
-                THERMAL_GRADIENTS[selected_gradient_idx].name
-            );
-            *selected_gradient = THERMAL_GRADIENTS[selected_gradient_idx].clone();
         }
 
         resp

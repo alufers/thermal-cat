@@ -57,7 +57,7 @@ impl AutoDisplayRangeController {
         self.last_compute_call = Some(now);
 
         // if the max point or min point of the captured range is in the shrinking range, start shrinking the current range
-        let mut shrinking_range = TempRange::new(
+        let shrinking_range = TempRange::new(
             self.current.min + self.shrink_range_min_headroom,
             self.current.max - self.shrink_range_max_headroom,
         );
@@ -76,7 +76,7 @@ impl AutoDisplayRangeController {
 
         if self.clipping_time > self.clipping_time_threshold {
             if !self.anim_target_range.is_some() {
-                let mut target = TempRange::new(
+                let target = TempRange::new(
                     captured_range.min - self.new_range_min_headroom,
                     captured_range.max + self.new_range_max_headroom,
                 );

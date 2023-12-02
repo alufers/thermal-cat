@@ -1,10 +1,10 @@
 use std::{error::Error, sync::Arc};
 
 use eframe::{
-    egui::{RichText, TextFormat, WidgetText},
+    egui::{TextFormat},
     epaint::{text::LayoutJob, Color32, FontFamily, FontId},
 };
-use nokhwa::{native_api_backend, query, utils::CameraInfo, NokhwaError};
+use nokhwa::{native_api_backend, query, utils::CameraInfo};
 
 use once_cell::sync::Lazy;
 use regex::Regex;

@@ -1,4 +1,4 @@
-use std::{error::Error, fs::{File, self}, io::{BufReader, BufWriter}};
+use std::{fs::{File, self}, io::{BufReader, BufWriter}};
 
 use serde::{Serialize, Deserialize};
 

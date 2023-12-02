@@ -1,9 +1,9 @@
 use eframe::{
-    egui::{self, Grid, Response, Ui, Widget},
+    egui::{self, Grid, Response, Ui},
     epaint::{TextureHandle, Vec2},
 };
 
-use crate::thermal_gradient::{self, ThermalGradient, THERMAL_GRADIENTS};
+use crate::thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS};
 
 pub struct GradientSelectorView {
     preview_textures: Vec<TextureHandle>,

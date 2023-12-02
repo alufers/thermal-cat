@@ -1,4 +1,4 @@
-use env_logger::fmt::Formatter;
+
 use serde::{Deserialize, Serialize};
 // 0.17.1
 use strum_macros::{Display, EnumIter}; // 0.17.1
@@ -6,7 +6,6 @@ use strum_macros::{Display, EnumIter}; // 0.17.1
 use std::{
     fmt::{self, Debug},
     ops,
-    path::Display,
 };
 
 //
@@ -18,7 +17,6 @@ pub struct Temp {
 }
 
 impl Temp {
-    pub const ZERO: Temp = Temp { value_kelvin: 0.0 };
     pub const MAX: Temp = Temp {
         value_kelvin: f32::MAX,
     };

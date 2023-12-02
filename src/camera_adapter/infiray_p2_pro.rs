@@ -1,4 +1,4 @@
-use std::error::Error;
+
 
 use nokhwa::{
     pixel_format::RgbFormat,

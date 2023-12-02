@@ -1,4 +1,4 @@
-use std::{error::Error, sync::Arc};
+use std::{sync::Arc};
 
 use nokhwa::{utils::RequestedFormat, Camera, NokhwaError};
 use once_cell::sync::Lazy;

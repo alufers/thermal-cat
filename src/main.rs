@@ -1,17 +1,15 @@
 use std::{
-    f32::consts::E,
-    fmt::Error,
     sync::{Arc, Mutex},
 };
 
-use log::{debug, error, info, log_enabled, Level};
+use log::{error};
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use gradient_selector_widget::GradientSelectorView;
 use nokhwa::{native_api_backend, utils::CameraIndex, Camera};
 
 use eframe::{
-    egui::{self, Button, Id, Response},
+    egui::{self, Button, Id},
     epaint::{text::LayoutJob, ColorImage, Vec2},
 };
 use temperature::{Temp, TempRange, TemperatureUnit};
@@ -19,7 +17,7 @@ use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSe
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
-use temperature_edit_field::{temperature_edit_field, temperature_range_edit_field};
+use temperature_edit_field::{temperature_range_edit_field};
 
 mod auto_display_range_controller;
 mod camera_adapter;
@@ -121,7 +119,7 @@ impl ThermalViewerApp {
 
 impl Default for ThermalViewerApp {
     fn default() -> Self {
-        let backend = native_api_backend().unwrap();
+        let _backend = native_api_backend().unwrap();
         let cameras = enumerate_cameras().unwrap();
         Self {
             did_init: false,
@@ -155,7 +153,7 @@ impl Default for ThermalViewerApp {
 }
 
 impl eframe::App for ThermalViewerApp {
-    fn update(&mut self, ctx: &egui::Context, frame_egui: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame_egui: &mut eframe::Frame) {
         if !self.did_init {
             self.did_init = true;
             self.prefs = Some(
@@ -212,7 +210,7 @@ impl eframe::App for ThermalViewerApp {
                                     .map(|p| p.show_unsupported_cameras)
                                     .unwrap_or(false)
                         })
-                        .for_each(|(i, camera)| {
+                        .for_each(|(_i, camera)| {
                             ui.selectable_value(
                                 &mut self.selected_camera_index,
                                 camera.info.index().clone(),

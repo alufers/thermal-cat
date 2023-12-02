@@ -1,5 +1,5 @@
 use crate::{temperature::TemperatureUnit, user_preferences::UserPreferences};
-use eframe::egui::{self, Button, Grid, Ui, ViewportBuilder, ViewportClass, ViewportId};
+use eframe::egui::{self, Grid};
 use log::error;
 use strum::IntoEnumIterator;
 

@@ -1,18 +1,17 @@
 use std::{
     mem,
-    ops::Index,
     sync::{mpsc, Arc},
     thread,
 };
 
-use eframe::epaint::{Color32, ColorImage, Pos2, Rect};
-use nokhwa::{pixel_format::RgbFormat, Camera};
+use eframe::epaint::{ColorImage};
+use nokhwa::{Camera};
 
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
     temperature::{Temp, TempRange, TemperatureUnit},
-    thermal_gradient::{ThermalGradient, ThermalGradientPoint, THERMAL_GRADIENTS},
+    thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},
 };
 
 pub struct ThermalCapturerResult {
@@ -88,7 +87,7 @@ impl ThermalCapturer {
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
 
-            let mut last_frame_time = std::time::Instant::now();
+            let mut last_frame_time ;
             let infiray = InfirayP2ProAdapter {};
             loop {
                 last_frame_time = std::time::Instant::now();

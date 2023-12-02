@@ -104,7 +104,7 @@ impl ThermalGradient {
         
         for (i, pixel) in pixels.iter_mut().enumerate() {
             let x = i % width;
-            let y = i / width;
+            let _y = i / width;
 
             let pos = x as f32 / width as f32;
 

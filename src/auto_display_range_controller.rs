@@ -41,10 +41,10 @@ impl AutoDisplayRangeController {
             clipping_time_threshold: Duration::from_secs(1),
             anim_duration: Duration::from_millis(500),
 
-            new_range_max_headroom: Temp::new(15.0),
+            new_range_max_headroom: Temp::new(10.0),
             new_range_min_headroom: Temp::new(5.0),
 
-            shrink_range_max_headroom: Temp::new(20.0),
+            shrink_range_max_headroom: Temp::new(15.0),
             shrink_range_min_headroom: Temp::new(8.0),
             min_separation: Temp::new(40.0),
         }
@@ -80,12 +80,6 @@ impl AutoDisplayRangeController {
                     captured_range.min - self.new_range_min_headroom,
                     captured_range.max + self.new_range_max_headroom,
                 );
-
-                // if target.diff() < self.min_separation {
-                //     // bump the max temp to fulfill the min separation
-                //     target.max = self.min_separation - target.diff();
-                // }
-                // start animation if we clipped for too long
                 self.anim_target_range = Some(target);
                  
                 self.anim_progress = Duration::from_secs(0);

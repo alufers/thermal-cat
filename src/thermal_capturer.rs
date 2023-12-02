@@ -94,11 +94,10 @@ impl ThermalCapturer {
             ctx.camera.open_stream().unwrap();
 
             let mut last_frame_time;
-            let infiray = InfirayP2ProAdapter {};
             loop {
                 last_frame_time = std::time::Instant::now();
 
-                let thermal_data = infiray.capture_thermal_data(&mut ctx.camera).unwrap();
+                let thermal_data = ctx.adapter.capture_thermal_data(&mut ctx.camera).unwrap();
 
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();
 

@@ -12,7 +12,7 @@ pub const CAMERA_ADAPTERS : Lazy<Vec<Arc<dyn CameraAdapter>>> = Lazy::new(|| {
         Arc::new(infiray_p2_pro::InfirayP2ProAdapter{}),
     ]
 });
-pub trait CameraAdapter {
+pub trait CameraAdapter : Send + Sync {
 
     ///
     /// Get friendly name of the camera model

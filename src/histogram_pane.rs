@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
-use eframe::{egui, epaint::Vec2};
+use eframe::egui;
 use egui_plot::{Bar, BarChart, Plot};
 
 use crate::{pane_dispatcher::Pane, temperature::TemperatureUnit, AppGlobalState};
@@ -43,7 +43,7 @@ impl Pane for HistogramPane {
                 .to_unit(TemperatureUnit::Kelvin) as f64;
         }
 
-        let mut chart = BarChart::new(
+        let chart = BarChart::new(
             temperature_points
                 .iter()
                 .map(|p| {
@@ -74,19 +74,8 @@ impl Pane for HistogramPane {
                 global_state.preferred_temperature_unit().suffix()
             ))
             .y_axis_formatter(|factor, _max_chars, _range| format!("{:.0}%", factor))
-            .x_axis_formatter(move|temp_val, max_chars, _range| {
-               return format!("{:.1} {}", temp_val, unit_suffix);
-                let formatted = format!("{:.1}", temp_val);
-                if formatted.len() > max_chars {
-                    format!("{:.0}", temp_val)
-                } else {
-                    let with_unit = format!("{} {}", formatted, unit_suffix);
-                    if with_unit.len() > max_chars {
-                        format!("{:.0}", temp_val)
-                    } else {
-                        with_unit
-                    }
-                }
+            .x_axis_formatter(move |temp_val, _max_chars, _range| {
+                return format!("{:.1} {}", temp_val, unit_suffix);
             })
             .show(ui, |plot_ui| plot_ui.bar_chart(chart));
     }

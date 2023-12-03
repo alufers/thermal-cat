@@ -1,7 +1,7 @@
 use std::{error::Error, sync::Arc};
 
 use eframe::{
-    egui::{TextFormat},
+    egui::TextFormat,
     epaint::{text::LayoutJob, Color32, FontFamily, FontId},
 };
 use nokhwa::{native_api_backend, query, utils::CameraInfo};

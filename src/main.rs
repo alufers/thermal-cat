@@ -1,20 +1,15 @@
 #![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use egui_dock::{DockArea, DockState, NodeIndex};
 use histogram_pane::HistogramPane;
 use log::error;
 
-use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
-use gradient_selector_widget::GradientSelectorView;
-use nokhwa::{native_api_backend, utils::CameraIndex, Camera};
+use nokhwa::native_api_backend;
 
-use eframe::{
-    egui::{self, Button, Id, Style},
-    epaint::{text::LayoutJob, Vec2},
-};
+use eframe::egui::{self};
 use pane_dispatcher::{Pane, PaneDispatcher};
 use setup_pane::SetupPane;
 use temperature::{Temp, TempRange, TemperatureUnit};
@@ -23,7 +18,7 @@ use thermal_display_pane::ThermalDisplayPane;
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
-use temperature_edit_field::temperature_range_edit_field;
+
 
 mod auto_display_range_controller;
 mod camera_adapter;
@@ -107,7 +102,7 @@ impl ThermalViewerApp {
 impl Default for ThermalViewerApp {
     fn default() -> Self {
         let _backend = native_api_backend().unwrap();
-        let mut global_state = AppGlobalState {
+        let global_state = AppGlobalState {
             prefs: None,
             thermal_capturer_inst: None,
             thermal_capturer_settings: ThermalCapturerSettings {

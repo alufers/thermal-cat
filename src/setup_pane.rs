@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -12,10 +11,10 @@ use nokhwa::Camera;
 use crate::camera_enumerator::{enumerate_cameras, EnumeratedCamera};
 use crate::gradient_selector_widget::GradientSelectorView;
 use crate::pane_dispatcher::Pane;
-use crate::temperature::{Temp, TempRange};
+
 use crate::temperature_edit_field::temperature_range_edit_field;
 use crate::thermal_capturer::ThermalCapturer;
-use crate::{AppGlobalState, ThermalViewerApp};
+use crate::AppGlobalState;
 
 pub struct SetupPane {
     global_state: Rc<RefCell<AppGlobalState>>,
@@ -90,7 +89,7 @@ impl Pane for SetupPane {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
-        let mut global_state_clone = self.global_state.clone();
+        let global_state_clone = self.global_state.clone();
         let mut global_state = global_state_clone.as_ref().borrow_mut();
         if !self.did_init {
             self.did_init = true;

@@ -9,7 +9,7 @@ use nokhwa::Camera;
 
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
-    camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
+    camera_adapter::CameraAdapter,
     temperature::{Temp, TempRange, TemperatureUnit},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},

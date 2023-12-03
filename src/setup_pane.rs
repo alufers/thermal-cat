@@ -14,6 +14,7 @@ use crate::pane_dispatcher::Pane;
 
 use crate::temperature_edit_field::temperature_range_edit_field;
 use crate::thermal_capturer::ThermalCapturer;
+use crate::thermal_data::ThermalDataRotation;
 use crate::AppGlobalState;
 
 pub struct SetupPane {
@@ -100,7 +101,7 @@ impl Pane for SetupPane {
 
         ui.heading("Open Thermal Viewer");
         ui.separator();
-        ui.label("Select Camera:");
+        ui.label("Select Camera");
         egui::ComboBox::from_label("")
             .selected_text(
                 self.selected_camera_info()
@@ -155,7 +156,44 @@ impl Pane for SetupPane {
         if let Some(error) = &self.open_camera_error {
             ui.colored_label(egui::Color32::RED, error);
         }
-
+        ui.separator();
+        ui.label("Rotation");
+        ui.horizontal(|ui| {
+            if ui
+                .selectable_value(
+                    &mut global_state.thermal_capturer_settings.rotation,
+                    ThermalDataRotation::None,
+                    "None",
+                )
+                .changed()
+                || ui
+                    .selectable_value(
+                        &mut global_state.thermal_capturer_settings.rotation,
+                        ThermalDataRotation::Clockwise90,
+                        "90°",
+                    )
+                    .changed()
+                || ui
+                    .selectable_value(
+                        &mut global_state.thermal_capturer_settings.rotation,
+                        ThermalDataRotation::Clockwise180,
+                        "180°",
+                    )
+                    .changed()
+                || ui
+                    .selectable_value(
+                        &mut global_state.thermal_capturer_settings.rotation,
+                        ThermalDataRotation::Clockwise270,
+                        "270°",
+                    )
+                    .changed()
+            {
+                let settings_clone = global_state.thermal_capturer_settings.clone();
+                if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                    thermal_capturer.set_settings(settings_clone);
+                }
+            }
+        });
         ui.separator();
 
         if ui

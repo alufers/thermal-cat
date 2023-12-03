@@ -11,7 +11,7 @@ use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::CameraAdapter,
     temperature::{Temp, TempRange, TemperatureUnit},
-    thermal_data::ThermalDataHistogram,
+    thermal_data::{ThermalDataHistogram, ThermalDataRotation},
     thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},
 };
 
@@ -28,6 +28,7 @@ pub struct ThermalCapturerSettings {
     pub auto_range: bool,
     pub manual_range: TempRange,
     pub gradient: ThermalGradient,
+    pub rotation: ThermalDataRotation,
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
@@ -79,6 +80,7 @@ impl ThermalCapturer {
                         Temp::from_unit(TemperatureUnit::Celsius, 100.0),
                     ),
                     gradient: THERMAL_GRADIENTS[0].clone(),
+                    rotation: ThermalDataRotation::None,
                 },
                 auto_range_controller: AutoDisplayRangeController::new(),
             }),
@@ -98,7 +100,11 @@ impl ThermalCapturer {
             loop {
                 last_frame_time = std::time::Instant::now();
 
-                let thermal_data = ctx.adapter.capture_thermal_data(&mut ctx.camera).unwrap();
+                let thermal_data = ctx
+                    .adapter
+                    .capture_thermal_data(&mut ctx.camera)
+                    .unwrap()
+                    .rotated(ctx.settings.rotation);
 
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();
 

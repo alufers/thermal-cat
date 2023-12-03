@@ -2,6 +2,14 @@ use eframe::epaint::{Color32, ColorImage};
 
 use crate::temperature::{Temp, TempRange};
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ThermalDataRotation {
+    None,
+    Clockwise90,
+    Clockwise180,
+    Clockwise270,
+}
+
 #[derive(Clone)]
 pub struct ThermalData {
     // Width in pixels
@@ -73,6 +81,38 @@ impl ThermalData {
         }
         (min_pos, max_pos)
     }
+
+    pub fn rotated(&self, rotation: ThermalDataRotation) -> Self {
+        if rotation == ThermalDataRotation::None {
+            return self.clone();
+        }
+        let (width, height) = match rotation {
+            ThermalDataRotation::None => (self.width, self.height),
+            ThermalDataRotation::Clockwise90 => (self.height, self.width),
+            ThermalDataRotation::Clockwise180 => (self.width, self.height),
+            ThermalDataRotation::Clockwise270 => (self.height, self.width),
+        };
+
+        let mut data: Vec<Temp> = vec![Temp::new(0.0); width * height];
+        for (i, pixel) in self.data.iter().enumerate() {
+            let x = i % self.width;
+            let y = i / self.width;
+            let (x, y) = match rotation {
+                ThermalDataRotation::None => (x, y),
+                ThermalDataRotation::Clockwise90 => (y, self.width - x - 1),
+                ThermalDataRotation::Clockwise180 => (self.width - x - 1, self.height - y - 1),
+                ThermalDataRotation::Clockwise270 => (self.height - y - 1, x),
+            };
+            data[y * width + x] = *pixel;
+        }
+
+        Self {
+            width,
+            height,
+            data,
+        }
+    }
+
 }
 
 #[derive(Clone, Debug)]

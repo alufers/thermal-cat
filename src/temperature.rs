@@ -117,6 +117,15 @@ pub struct TempRange {
     pub max: Temp,
 }
 
+impl Default for TempRange {
+    fn default() -> Self {
+        Self {
+            min: Temp::MIN,
+            max: Temp::MAX,
+        }
+    }
+}
+
 impl TempRange {
     pub fn new(min: Temp, max: Temp) -> Self {
         Self { min, max }

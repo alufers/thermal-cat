@@ -31,7 +31,11 @@ impl Pane for HistogramPane {
             .map(|r| &r.histogram.points)
             .unwrap_or(&default_vec);
 
-        let color_range = global_state.thermal_capturer_settings.manual_range;
+        let color_range = global_state
+            .last_thermal_capturer_result
+            .as_ref()
+            .map(|r| r.image_range)
+            .unwrap_or_default();
 
         let mut bucket_width = 1.0;
         if temperature_points.len() > 1 {

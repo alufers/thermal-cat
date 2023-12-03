@@ -171,7 +171,7 @@ impl Pane for SetupPane {
                 let range_to_copy = global_state
                     .last_thermal_capturer_result
                     .as_ref()
-                    .map(|res| res.range);
+                    .map(|res| res.image_range);
                 if let Some(range) = range_to_copy {
                     global_state.thermal_capturer_settings.manual_range = range;
                 }
@@ -193,7 +193,7 @@ impl Pane for SetupPane {
             if let Some(result) = global_state.last_thermal_capturer_result.as_ref()
                 && (global_state.thermal_capturer_settings.auto_range)
             {
-                range_copy = result.range;
+                range_copy = result.image_range;
                 &mut range_copy
             } else {
                 &mut global_state.thermal_capturer_settings.manual_range

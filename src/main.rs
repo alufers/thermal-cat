@@ -4,6 +4,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use egui_dock::{DockArea, DockState, NodeIndex};
+use histogram_pane::HistogramPane;
 use log::error;
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
@@ -28,6 +29,7 @@ mod auto_display_range_controller;
 mod camera_adapter;
 mod camera_enumerator;
 mod gradient_selector_widget;
+mod histogram_pane;
 mod pane_dispatcher;
 mod setup_pane;
 mod temperature;
@@ -92,6 +94,12 @@ impl ThermalViewerApp {
             NodeIndex::root(),
             0.3,
             vec![Box::new(SetupPane::new(self.global_state.clone()))],
+        );
+
+        self.dock_state.main_surface_mut().split_below(
+            NodeIndex::root(),
+            0.7,
+            vec![Box::new(HistogramPane::new(self.global_state.clone()))],
         );
     }
 }

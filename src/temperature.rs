@@ -149,6 +149,13 @@ impl TempRange {
     pub fn diff(&self) -> Temp {
         self.max - self.min
     }
+
+    pub fn join(&self, other: TempRange) -> TempRange {
+        TempRange {
+            min: Temp::new(self.min.value_kelvin.min(other.min.value_kelvin)),
+            max: Temp::new(self.max.value_kelvin.max(other.max.value_kelvin)),
+        }
+    }
 }
 
 impl Debug for TempRange {

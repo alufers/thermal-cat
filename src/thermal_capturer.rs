@@ -11,15 +11,16 @@ use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::{infiray_p2_pro::InfirayP2ProAdapter, CameraAdapter},
     temperature::{Temp, TempRange, TemperatureUnit},
+    thermal_data::ThermalDataHistogram,
     thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},
 };
 
 pub struct ThermalCapturerResult {
     pub image: ColorImage,
+    pub image_range: TempRange,
     pub real_fps: f32,
     pub reported_fps: f32,
-
-    pub range: TempRange,
+    pub histogram: ThermalDataHistogram,
 }
 
 #[derive(Clone)]
@@ -119,7 +120,12 @@ impl ThermalCapturer {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
-                    range: mapping_range,
+                    image_range: mapping_range,
+                    histogram: ThermalDataHistogram::from_thermal_data(
+                        &thermal_data,
+                        captured_range.join(mapping_range),
+                        100,
+                    ),
                 });
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();

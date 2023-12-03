@@ -1,7 +1,6 @@
 use eframe::epaint::{Color32, ColorImage};
 
-use crate::temperature::Temp;
-
+use crate::temperature::{Temp, TempRange};
 
 #[derive(Clone)]
 pub struct ThermalData {
@@ -22,10 +21,7 @@ pub struct ThermalDataPos {
 
 impl Default for ThermalDataPos {
     fn default() -> Self {
-        Self {
-            x: 0,
-            y: 0,
-        }
+        Self { x: 0, y: 0 }
     }
 }
 
@@ -53,7 +49,6 @@ impl ThermalData {
         }
 
         img
-        
     }
 
     pub fn get_min_max_pos(&self) -> (ThermalDataPos, ThermalDataPos) {
@@ -77,5 +72,44 @@ impl ThermalData {
             }
         }
         (min_pos, max_pos)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ThermalDataHistogramPoint {
+    pub temperature: Temp,
+    pub factor: f32,
+}
+
+pub struct ThermalDataHistogram {
+    pub points: Vec<ThermalDataHistogramPoint>,
+}
+
+impl ThermalDataHistogram {
+    pub fn from_thermal_data(data: &ThermalData, range: TempRange, num_buckets: usize) -> Self {
+        let mut buckets = vec![0; num_buckets];
+
+        for temp in &data.data {
+            let bucket = range.factor(*temp) * (num_buckets as f32);
+            let bucket = bucket as usize;
+            if bucket >= num_buckets {
+                continue;
+            }
+            buckets[bucket] += 1;
+        }
+
+        let total_pixels = data.data.len();
+
+        let mut points = Vec::new();
+        for (i, bucket) in buckets.iter().enumerate() {
+            let factor = *bucket as f32 / total_pixels as f32;
+            let temperature =
+                range.min + (range.max - range.min) * ((i as f32 + 0.5) / num_buckets as f32);
+            points.push(ThermalDataHistogramPoint {
+                temperature,
+                factor,
+            });
+        }
+        Self { points }
     }
 }

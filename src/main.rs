@@ -121,16 +121,14 @@ impl Default for ThermalViewerApp {
             last_thermal_capturer_result: None,
         };
 
-        let mut me: ThermalViewerApp = ThermalViewerApp {
+        ThermalViewerApp {
             dock_state: DockState::new(vec![]),
 
             did_init: false,
 
             user_preferences_window: UserPreferencesWindow::new(),
             global_state: Rc::new(RefCell::new(global_state)),
-        };
-
-        me
+        }
     }
 }
 

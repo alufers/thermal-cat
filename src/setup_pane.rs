@@ -184,7 +184,6 @@ impl Pane for SetupPane {
         // copy of the range to pass to the edit field
         // (it will not be modified if auto_range is enabled, because the field is disabled)
         let mut range_copy;
-        let mut dddd_range = TempRange::new(Temp::new(0.0), Temp::new(0.0));
         if temperature_range_edit_field(
             ui,
             "range",

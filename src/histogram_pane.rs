@@ -21,8 +21,8 @@ impl Pane for HistogramPane {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
-        let mut global_state_clone = self.global_state.clone();
-        let mut global_state = global_state_clone.as_ref().borrow_mut();
+        let global_state_clone = self.global_state.clone();
+        let global_state = global_state_clone.as_ref().borrow_mut();
 
         let default_vec = vec![];
         let temperature_points = global_state
@@ -74,7 +74,7 @@ impl Pane for HistogramPane {
                 global_state.preferred_temperature_unit().suffix()
             ))
             .y_axis_formatter(|factor, _max_chars, _range| format!("{:.0}%", factor))
-            .x_axis_formatter(move|temp_val, max_chars, range| {
+            .x_axis_formatter(move|temp_val, max_chars, _range| {
                return format!("{:.1} {}", temp_val, unit_suffix);
                 let formatted = format!("{:.1}", temp_val);
                 if formatted.len() > max_chars {

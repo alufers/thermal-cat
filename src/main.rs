@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
-use egui_dock::{DockArea, DockState};
+use egui_dock::{DockArea, DockState, NodeIndex};
 use log::error;
 
 use camera_enumerator::{enumerate_cameras, EnumeratedCamera};
@@ -83,6 +83,19 @@ struct ThermalViewerApp {
     global_state: Rc<RefCell<AppGlobalState>>,
 }
 
+impl ThermalViewerApp {
+    fn set_default_dock_state(&mut self) {
+        self.dock_state = DockState::new(vec![Box::new(ThermalDisplayPane::new(
+            self.global_state.clone(),
+        ))]);
+        self.dock_state.main_surface_mut().split_left(
+            NodeIndex::root(),
+            0.3,
+            vec![Box::new(SetupPane::new(self.global_state.clone()))],
+        );
+    }
+}
+
 impl Default for ThermalViewerApp {
     fn default() -> Self {
         let _backend = native_api_backend().unwrap();
@@ -122,10 +135,7 @@ impl eframe::App for ThermalViewerApp {
                     .inspect_err(|err| error!("Failed to load user preferences: {}", err))
                     .unwrap_or_default(),
             );
-            self.dock_state = DockState::new(vec![
-                Box::new(SetupPane::new(self.global_state.clone())),
-                Box::new(ThermalDisplayPane::new(self.global_state.clone())),
-            ]);
+            self.set_default_dock_state();
         }
 
         {
@@ -161,6 +171,11 @@ impl eframe::App for ThermalViewerApp {
                     if ui.button("Quit").clicked() {
                         self.global_state.borrow_mut().thermal_capturer_inst = None;
                         std::process::exit(0);
+                    }
+                });
+                ui.menu_button("Window", |ui| {
+                    if ui.button("Reset Layout").clicked() {
+                        self.set_default_dock_state();
                     }
                 });
             });

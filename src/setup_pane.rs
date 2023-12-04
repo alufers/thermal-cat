@@ -19,8 +19,6 @@ use crate::AppGlobalState;
 
 pub struct SetupPane {
     global_state: Rc<RefCell<AppGlobalState>>,
-
-    did_init: bool,
     cameras: Vec<EnumeratedCamera>,
     selected_camera_index: CameraIndex,
     open_camera_error: Option<String>,
@@ -32,7 +30,6 @@ impl SetupPane {
         let cameras = enumerate_cameras().unwrap();
         SetupPane {
             global_state,
-            did_init: false,
             selected_camera_index: cameras
                 .iter()
                 .find(|camera| camera.adapter.is_some())
@@ -93,8 +90,8 @@ impl Pane for SetupPane {
     fn ui(&mut self, ui: &mut egui::Ui) {
         let global_state_clone = self.global_state.clone();
         let mut global_state = global_state_clone.as_ref().borrow_mut();
-        if !self.did_init {
-            self.did_init = true;
+        if !global_state.did_try_open_camera_at_startup {
+            global_state.did_try_open_camera_at_startup = true;
             if global_state.prefs.as_ref().unwrap().auto_open_camera {
                 self.open_selected_camera(ui.ctx(), &mut global_state);
             }

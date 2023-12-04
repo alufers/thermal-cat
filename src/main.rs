@@ -62,6 +62,7 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 pub struct AppGlobalState {
+    did_try_open_camera_at_startup: bool,
     thermal_capturer_inst: Option<ThermalCapturer>,
     thermal_capturer_settings: ThermalCapturerSettings,
     prefs: Option<UserPreferences>,
@@ -115,6 +116,7 @@ impl Default for ThermalViewerApp {
     fn default() -> Self {
         let _backend = native_api_backend().unwrap();
         let global_state = AppGlobalState {
+            did_try_open_camera_at_startup: false,
             prefs: None,
             thermal_capturer_inst: None,
             thermal_capturer_settings: ThermalCapturerSettings {

@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use anyhow::Error;
 use eframe::egui::WidgetText;
 use eframe::egui::{self, Button};
 use eframe::epaint::text::LayoutJob;
@@ -19,7 +20,7 @@ use crate::AppGlobalState;
 
 pub struct SetupPane {
     global_state: Rc<RefCell<AppGlobalState>>,
-    cameras: Vec<EnumeratedCamera>,
+    cameras: Result<Vec<EnumeratedCamera>, Error>,
     selected_camera_index: CameraIndex,
     open_camera_error: Option<String>,
     gradient_selector: GradientSelectorView,
@@ -27,13 +28,20 @@ pub struct SetupPane {
 
 impl SetupPane {
     pub fn new(global_state: Rc<RefCell<AppGlobalState>>) -> SetupPane {
-        let cameras = enumerate_cameras().unwrap();
+        let cameras = enumerate_cameras().inspect_err(|err| {
+            eprintln!("Failed to enumerate cameras: {:#}", err);
+        });
+       
         SetupPane {
             global_state,
-            selected_camera_index: cameras
-                .iter()
-                .find(|camera| camera.adapter.is_some())
-                .map(|camera| camera.info.index().clone())
+            selected_camera_index: cameras.as_ref()
+                .ok()
+                .and_then(|cameras| {
+                    cameras
+                        .iter()
+                        .find(|camera| camera.adapter.is_some())
+                        .map(|camera| camera.info.index().clone())
+                })
                 .unwrap_or(CameraIndex::Index(0)),
             cameras,
             open_camera_error: None,
@@ -42,9 +50,11 @@ impl SetupPane {
     }
 
     fn selected_camera_info(&self) -> Option<&EnumeratedCamera> {
-        self.cameras
-            .iter()
-            .find(|camera| camera.info.index() == &self.selected_camera_index)
+        self.cameras.as_ref().ok().and_then(|cameras| {
+            cameras
+                .iter()
+                .find(|camera| camera.info.index() == &self.selected_camera_index)
+        })
     }
 
     fn open_selected_camera(&mut self, ctx: &egui::Context, global_state: &mut AppGlobalState) {
@@ -100,37 +110,45 @@ impl Pane for SetupPane {
         ui.heading("Open Thermal Viewer");
         ui.separator();
         ui.label("Select Camera");
-        egui::ComboBox::from_label("")
-            .selected_text(
-                self.selected_camera_info()
-                    .and_then(|c| Some(c.rich_text_name(true)))
-                    .or(Some(LayoutJob::single_section(
-                        "No Camera Selected".to_string(),
-                        Default::default(),
-                    )))
-                    .unwrap(),
-            )
-            .width(200.0)
-            .show_ui(ui, |ui| {
-                self.cameras
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, cam)| {
-                        cam.adapter.is_some()
-                            || global_state
-                                .prefs
-                                .as_ref()
-                                .map(|p| p.show_unsupported_cameras)
-                                .unwrap_or(false)
-                    })
-                    .for_each(|(_i, camera)| {
-                        ui.selectable_value(
-                            &mut self.selected_camera_index,
-                            camera.info.index().clone(),
-                            camera.rich_text_name(false),
-                        );
+
+        match self.cameras {
+            Ok(ref cameras) => {
+                egui::ComboBox::from_label("")
+                    .selected_text(
+                        self.selected_camera_info()
+                            .and_then(|c| Some(c.rich_text_name(true)))
+                            .or(Some(LayoutJob::single_section(
+                                "No Camera Selected".to_string(),
+                                Default::default(),
+                            )))
+                            .unwrap(),
+                    )
+                    .width(200.0)
+                    .show_ui(ui, |ui| {
+                        cameras
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, cam)| {
+                                cam.adapter.is_some()
+                                    || global_state
+                                        .prefs
+                                        .as_ref()
+                                        .map(|p| p.show_unsupported_cameras)
+                                        .unwrap_or(false)
+                            })
+                            .for_each(|(_i, camera)| {
+                                ui.selectable_value(
+                                    &mut self.selected_camera_index,
+                                    camera.info.index().clone(),
+                                    camera.rich_text_name(false),
+                                );
+                            });
                     });
-            });
+            }
+            Err(ref err) => {
+                ui.colored_label(egui::Color32::RED, format!("Camera enumeration error: {}", err));
+            }
+        }
 
         if global_state.thermal_capturer_inst.is_none() {
             // Show the "Open Camera" button only if the selected camera exists and has an adapter

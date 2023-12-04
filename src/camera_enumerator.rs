@@ -70,14 +70,14 @@ impl EnumeratedCamera {
     }
 }
 
-pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, Box<dyn Error>> {
+pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, anyhow::Error> {
     let backend = native_api_backend().ok_or(EnumerationError {
         message: "Failed to initialize Nokhwa backend".to_string(),
     })?;
 
     let nokhwa_cameras = query(backend)?;
 
-    return Ok::<Vec<EnumeratedCamera>, Box<dyn Error>>(
+    return Ok::<Vec<EnumeratedCamera>, anyhow::Error>(
         nokhwa_cameras
             .into_iter()
             .map(|info| {

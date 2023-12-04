@@ -123,7 +123,7 @@ impl ThermalCapturer {
                 let mut gizmo_results = HashMap::default();
                 ctx.settings
                     .gizmo
-                    .children()
+                    .children_mut()
                     .unwrap()
                     .iter()
                     .for_each(|g| match g.kind {

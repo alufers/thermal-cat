@@ -52,7 +52,7 @@ impl Pane for MeasurementsPane {
                 global_state
                     .thermal_capturer_settings
                     .gizmo
-                    .children()
+                    .children_mut()
                     .unwrap()
                     .iter_mut()
                     .for_each(|gizmo| {

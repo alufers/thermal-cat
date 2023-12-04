@@ -166,18 +166,23 @@ impl eframe::App for ThermalViewerApp {
         {
             let mut borrowed_global_state = self.global_state.borrow_mut();
 
-            let mut result = Option::<Box<ThermalCapturerResult>>::None;
+            while {
+                let mut result = Option::<Box<ThermalCapturerResult>>::None;
 
-            if let Some(capturer) = borrowed_global_state.thermal_capturer_inst.as_mut() {
-                // Handle thermal capturer commands
-                if let Ok(cmd) = capturer.result_receiver.try_recv() {
-                    result = Some(cmd);
+                if let Some(capturer) = borrowed_global_state.thermal_capturer_inst.as_mut() {
+                    // Handle thermal capturer commands
+                    if let Ok(cmd) = capturer.result_receiver.try_recv() {
+                        result = Some(cmd);
+                    }
                 }
-            }
+                let had_result = result.is_some();
 
-            if let Some(result) = result {
-                borrowed_global_state.last_thermal_capturer_result = Some(result);
-            }
+                if let Some(result) = result {
+                    borrowed_global_state.last_thermal_capturer_result = Some(result);
+                }
+
+                had_result
+            } {}
         }
 
         self.user_preferences_window.draw(

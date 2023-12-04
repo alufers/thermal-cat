@@ -147,6 +147,16 @@ impl ThermalCapturer {
                                 },
                             );
                         }
+                        GizmoKind::TempAt { pos } => {
+                            gizmo_results.insert(
+                                g.uuid,
+                                GizmoResult {
+                                    uuid: g.uuid,
+                                    temperature: thermal_data.temperature_at(pos.x, pos.y),
+                                    pos,
+                                },
+                            );
+                        }
                         _ => panic!("Unimplemented gizmo kind"),
                     });
 

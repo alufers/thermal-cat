@@ -38,12 +38,6 @@ impl Gizmo {
         }
     }
 
-    pub fn children(self) -> Option<Vec<Gizmo>> {
-        match self.kind {
-            GizmoKind::Root { children } => Some(children),
-            _ => None,
-        }
-    }
 
     pub fn children_mut(&mut self) -> Option<&mut Vec<Gizmo>> {
         match &mut self.kind {

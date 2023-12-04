@@ -6,7 +6,12 @@ use eframe::{
 };
 use egui_plot::{Plot, PlotImage, PlotPoint, Points};
 
-use crate::{pane_dispatcher::Pane, AppGlobalState};
+use crate::{
+    gizmos::{Gizmo, GizmoKind},
+    pane_dispatcher::Pane,
+    thermal_data::ThermalDataPos,
+    AppGlobalState,
+};
 
 pub struct ThermalDisplayPane {
     global_state: Rc<RefCell<AppGlobalState>>,
@@ -101,7 +106,7 @@ impl Pane for ThermalDisplayPane {
                                     plot_ui.points(
                                         Points::new(vec![[x, y].into()])
                                             .color(c.color)
-                                            .radius(10.0),
+                                            .radius(5.0),
                                     );
                                 }
                             });
@@ -110,7 +115,41 @@ impl Pane for ThermalDisplayPane {
                             texture,
                             PlotPoint::new(img_size.0 as f64 / 2.0, img_size.1 as f64 / 2.0),
                             Vec2::new(img_size.0 as f32, img_size.1 as f32),
-                        ))
+                        ));
+
+                        if plot_ui.response().clicked() {
+                            let pos = plot_ui.pointer_coordinate().unwrap();
+                          
+                            if pos.x > 0.0
+                                && pos.y > 0.0
+                                && pos.x < img_size.0 as f64
+                                && pos.y < img_size.1 as f64
+                            {
+                                global_state
+                                    .thermal_capturer_settings
+                                    .gizmo
+                                    .children_mut()
+                                    .as_mut()
+                                    .unwrap()
+                                    .push(Gizmo::new(
+                                        GizmoKind::TempAt {
+                                            pos: ThermalDataPos::new(
+                                                pos.x as usize,
+                                                img_size.1 - pos.y as usize,
+                                            ),
+                                        },
+                                        "Custom".to_string(),
+                                        egui::Color32::KHAKI,
+                                    ));
+
+                                let settings_clone = global_state.thermal_capturer_settings.clone();
+                                if let Some(thermal_capturer) =
+                                    global_state.thermal_capturer_inst.as_mut()
+                                {
+                                    thermal_capturer.set_settings(settings_clone);
+                                }
+                            }
+                        }
                     });
                 Some(())
             });

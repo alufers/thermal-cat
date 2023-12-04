@@ -9,9 +9,7 @@ use eframe::{
     epaint::Color32,
 };
 
-use crate::{
-    gizmos::GizmoKind, pane_dispatcher::Pane, AppGlobalState,
-};
+use crate::{gizmos::GizmoKind, pane_dispatcher::Pane, AppGlobalState};
 
 pub struct MeasurementsPane {
     global_state: Rc<RefCell<AppGlobalState>>,
@@ -60,6 +58,9 @@ impl Pane for MeasurementsPane {
                         let icon = Image::new(match gizmo.kind {
                             GizmoKind::MaxTemp => egui::include_image!("./icons/flame.svg"),
                             GizmoKind::MinTemp => egui::include_image!("./icons/snowflake.svg"),
+                            GizmoKind::TempAt { pos: _ } => {
+                                egui::include_image!("./icons/crosshair_center.svg")
+                            }
                             _ => egui::include_image!("./icons/flame.svg"),
                         });
                         ui.add(icon.tint(gizmo.color));

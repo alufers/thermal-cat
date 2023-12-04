@@ -34,6 +34,12 @@ impl Default for ThermalDataPos {
     }
 }
 
+impl ThermalDataPos {
+    pub fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
+}
+
 impl ThermalData {
     pub fn new(width: usize, height: usize, data: Vec<Temp>) -> Self {
         Self {

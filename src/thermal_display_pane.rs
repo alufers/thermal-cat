@@ -104,9 +104,7 @@ impl Pane for ThermalDisplayPane {
                                     // )
 
                                     plot_ui.points(
-                                        Points::new(vec![[x, y].into()])
-                                            .color(c.color)
-                                            .radius(5.0),
+                                        Points::new(vec![[x, y].into()]).color(c.color).radius(5.0),
                                     );
                                 }
                             });
@@ -119,28 +117,21 @@ impl Pane for ThermalDisplayPane {
 
                         if plot_ui.response().clicked() {
                             let pos = plot_ui.pointer_coordinate().unwrap();
-                          
+
                             if pos.x > 0.0
                                 && pos.y > 0.0
                                 && pos.x < img_size.0 as f64
                                 && pos.y < img_size.1 as f64
                             {
-                                global_state
-                                    .thermal_capturer_settings
-                                    .gizmo
-                                    .children_mut()
-                                    .as_mut()
-                                    .unwrap()
-                                    .push(Gizmo::new(
-                                        GizmoKind::TempAt {
-                                            pos: ThermalDataPos::new(
-                                                pos.x as usize,
-                                                img_size.1 - pos.y as usize,
-                                            ),
-                                        },
-                                        "Custom".to_string(),
-                                        egui::Color32::KHAKI,
-                                    ));
+                                global_state.thermal_capturer_settings.gizmo.push_child(
+                                    GizmoKind::TempAt {
+                                        pos: ThermalDataPos::new(
+                                            pos.x as usize,
+                                            img_size.1 - pos.y as usize,
+                                        ),
+                                    },
+                                    "Custom".to_string(),
+                                );
 
                                 let settings_clone = global_state.thermal_capturer_settings.clone();
                                 if let Some(thermal_capturer) =

@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use eframe::egui;
-use egui_plot::{Bar, BarChart, Plot};
+use eframe::{egui, epaint::Color32};
+use egui_plot::{Bar, BarChart, Plot, VLine};
 
 use crate::{pane_dispatcher::Pane, temperature::TemperatureUnit, AppGlobalState};
 
@@ -31,7 +31,7 @@ impl Pane for HistogramPane {
             .map(|r| &r.histogram.points)
             .unwrap_or(&default_vec);
 
-        let color_range = global_state
+        let color_mapping_range = global_state
             .last_thermal_capturer_result
             .as_ref()
             .map(|r| r.image_range)
@@ -58,7 +58,7 @@ impl Pane for HistogramPane {
                         global_state
                             .thermal_capturer_settings
                             .gradient
-                            .get_color(color_range.factor(p.temperature)),
+                            .get_color(color_mapping_range.factor(p.temperature)),
                     )
                 })
                 .collect(),
@@ -77,6 +77,26 @@ impl Pane for HistogramPane {
             .x_axis_formatter(move |temp_val, _max_chars, _range| {
                 return format!("{:.1} {}", temp_val, unit_suffix);
             })
-            .show(ui, |plot_ui| plot_ui.bar_chart(chart));
+            .show(ui, |plot_ui| {
+                plot_ui.bar_chart(chart);
+                plot_ui.vline(
+                    VLine::new(
+                        color_mapping_range
+                            .min
+                            .to_unit(global_state.preferred_temperature_unit())
+                            as f64,
+                    )
+                    .color(Color32::GRAY),
+                );
+                plot_ui.vline(
+                    VLine::new(
+                        color_mapping_range
+                            .max
+                            .to_unit(global_state.preferred_temperature_unit())
+                            as f64,
+                    )
+                    .color(Color32::GRAY),
+                );
+            });
     }
 }

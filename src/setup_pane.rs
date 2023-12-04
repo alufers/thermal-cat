@@ -65,6 +65,7 @@ impl SetupPane {
                 global_state.thermal_capturer_inst = Some(ThermalCapturer::new(
                     cam,
                     cloned_adapter,
+                    global_state.thermal_capturer_settings.clone(),
                     Arc::new(move || {
                         cloned_ctx.request_repaint(); // repaint so that the result can be read out
                     }),

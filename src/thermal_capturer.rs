@@ -4,12 +4,14 @@ use std::{
     thread,
 };
 
-use eframe::epaint::ColorImage;
+use eframe::epaint::{ahash::HashMap, ColorImage};
 use nokhwa::Camera;
+use uuid::Uuid;
 
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::CameraAdapter,
+    gizmos::{self, Gizmo, GizmoKind, GizmoResult},
     temperature::{Temp, TempRange, TemperatureUnit},
     thermal_data::{ThermalDataHistogram, ThermalDataRotation},
     thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},
@@ -21,6 +23,7 @@ pub struct ThermalCapturerResult {
     pub real_fps: f32,
     pub reported_fps: f32,
     pub histogram: ThermalDataHistogram,
+    pub gizmo_results: HashMap<Uuid, GizmoResult>,
 }
 
 #[derive(Clone)]
@@ -29,6 +32,7 @@ pub struct ThermalCapturerSettings {
     pub manual_range: TempRange,
     pub gradient: ThermalGradient,
     pub rotation: ThermalDataRotation,
+    pub gizmo: Gizmo,
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
@@ -62,6 +66,7 @@ impl ThermalCapturer {
     pub fn new(
         camera: Camera,
         adapter: Arc<dyn CameraAdapter>,
+        default_settings: ThermalCapturerSettings,
         callback: ThermalCapturerCallback,
     ) -> Self {
         let (cmd_sender, cmd_receiver) = mpsc::channel();
@@ -73,15 +78,7 @@ impl ThermalCapturer {
                 callback,
                 cmd_receiver,
                 result_sender,
-                settings: ThermalCapturerSettings {
-                    auto_range: true,
-                    manual_range: TempRange::new(
-                        Temp::from_unit(TemperatureUnit::Celsius, 0.0),
-                        Temp::from_unit(TemperatureUnit::Celsius, 100.0),
-                    ),
-                    gradient: THERMAL_GRADIENTS[0].clone(),
-                    rotation: ThermalDataRotation::None,
-                },
+                settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
             }),
             cmd_sender,
@@ -122,6 +119,37 @@ impl ThermalCapturer {
                 let image = thermal_data.map_to_image(|temp| {
                     ctx.settings.gradient.get_color(mapping_range.factor(temp))
                 });
+
+                let mut gizmo_results = HashMap::default();
+                ctx.settings
+                    .gizmo
+                    .children()
+                    .unwrap()
+                    .iter()
+                    .for_each(|g| match g.kind {
+                        GizmoKind::MaxTemp => {
+                            gizmo_results.insert(
+                                g.uuid,
+                                GizmoResult {
+                                    uuid: g.uuid,
+                                    temperature: captured_range.max,
+                                    pos: maxtemp_pos.clone(),
+                                },
+                            );
+                        }
+                        GizmoKind::MinTemp => {
+                            gizmo_results.insert(
+                                g.uuid,
+                                GizmoResult {
+                                    uuid: g.uuid,
+                                    temperature: captured_range.min,
+                                    pos: mintemp_pos.clone(),
+                                },
+                            );
+                        }
+                        _ => panic!("Unimplemented gizmo kind"),
+                    });
+
                 let result = Box::new(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
@@ -132,6 +160,7 @@ impl ThermalCapturer {
                         captured_range.join(mapping_range),
                         100,
                     ),
+                    gizmo_results,
                 });
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();

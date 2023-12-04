@@ -4,12 +4,17 @@
 use std::{cell::RefCell, rc::Rc};
 
 use egui_dock::{DockArea, DockState, NodeIndex};
+use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
 use log::error;
 
+use measurements_pane::MeasurementsPane;
 use nokhwa::native_api_backend;
 
-use eframe::egui::{self};
+use eframe::{
+    egui::{self},
+    epaint::Color32,
+};
 use pane_dispatcher::{Pane, PaneDispatcher};
 use setup_pane::SetupPane;
 use temperature::{Temp, TempRange, TemperatureUnit};
@@ -19,13 +24,13 @@ use thermal_display_pane::ThermalDisplayPane;
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
-
-
 mod auto_display_range_controller;
 mod camera_adapter;
 mod camera_enumerator;
+mod gizmos;
 mod gradient_selector_widget;
 mod histogram_pane;
+mod measurements_pane;
 mod pane_dispatcher;
 mod setup_pane;
 mod temperature;
@@ -86,16 +91,22 @@ impl ThermalViewerApp {
         self.dock_state = DockState::new(vec![Box::new(ThermalDisplayPane::new(
             self.global_state.clone(),
         ))]);
-        self.dock_state.main_surface_mut().split_left(
+        let [right, left] = self.dock_state.main_surface_mut().split_left(
             NodeIndex::root(),
             0.3,
             vec![Box::new(SetupPane::new(self.global_state.clone()))],
         );
 
         self.dock_state.main_surface_mut().split_below(
-            NodeIndex::root(),
+            right,
             0.7,
             vec![Box::new(HistogramPane::new(self.global_state.clone()))],
+        );
+
+        self.dock_state.main_surface_mut().split_below(
+            left,
+            0.7,
+            vec![Box::new(MeasurementsPane::new(self.global_state.clone()))],
         );
     }
 }
@@ -114,6 +125,14 @@ impl Default for ThermalViewerApp {
                     Temp::from_unit(TemperatureUnit::Celsius, 50.0),
                 ),
                 gradient: thermal_gradient::THERMAL_GRADIENTS[0].clone(),
+                gizmo: Gizmo::new_root(vec![
+                    Gizmo::new(GizmoKind::MaxTemp, "Max".to_string(), Color32::RED),
+                    Gizmo::new(
+                        GizmoKind::MinTemp,
+                        "Min".to_string(),
+                        Color32::from_rgb(72, 219, 251),
+                    ),
+                ]),
             },
             last_thermal_capturer_result: None,
         };

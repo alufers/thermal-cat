@@ -133,7 +133,23 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
         })
 }
 
-#[cfg(not(target_os = "linux"))]
+//
+// In the case of video devices, the AVCaptureDevice uniqueID seems to a string in the form "0xLLLLLLLLVVVVPPPP", where:
+// LLLLLLLL is the hexadecimal string representing the USB device's location ID
+// VVVV is the hexadecimal string representing the USB device's manufacturer ID
+// PPPP is the hexadecimal string representing the USB device's product ID.
+//
+// https://stackoverflow.com/questions/40006908/usb-interface-of-an-avcapturedevice
+//
+#[cfg(target_os = "macos")]
 fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
-    None
+    // get last 4 characters of the unique ID
+    let unique_id: String = info.misc();
+    if unique_id.len() < 8 {
+        return None;
+    }
+    let pid = unique_id[unique_id.len() - 4..].parse();
+    let vid = unique_id[unique_id.len() - 8..unique_id.len() - 4].parse();
+
+    vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
 }

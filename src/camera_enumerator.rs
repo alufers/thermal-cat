@@ -148,8 +148,9 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     if unique_id.len() < 8 {
         return None;
     }
-    let pid = unique_id[unique_id.len() - 4..].parse();
-    let vid = unique_id[unique_id.len() - 8..unique_id.len() - 4].parse();
+
+    let pid = u16::from_str_radix(&unique_id[unique_id.len() - 4..], 16);
+    let vid = u16::from_str_radix(&unique_id[unique_id.len() - 8..unique_id.len() - 4], 16);
 
     vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
 }

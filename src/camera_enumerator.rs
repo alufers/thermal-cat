@@ -102,8 +102,10 @@ pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, anyhow::Error> {
     );
 }
 
+#[cfg(target_os = "linux")]
 static DEV_VIDEO_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/dev/video(\d+)").unwrap());
 
+#[cfg(target_os = "linux")]
 static UEVENT_PRODUCT_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"PRODUCT=(\w+)/(\w+)/(\w+)").unwrap());
 
@@ -157,6 +159,7 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
 }
 
+#[cfg(target_os = "windows")]
 static WINDOWS_USB_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"usb#vid_([0-9a-fA-F]+)&pid_([0-9a-fA-F]+)").unwrap());
 

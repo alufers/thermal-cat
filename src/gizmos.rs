@@ -8,7 +8,6 @@ pub enum GizmoKind {
     Root { children: Vec<Gizmo> },
     MaxTemp,
     MinTemp,
-    AverageTemp,
     TempAt { pos: ThermalDataPos },
 }
 

@@ -1,10 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
 use eframe::{
-    egui::{self, TextureOptions},
-    epaint::Vec2,
+    egui::{
+        self,
+        load::{TextureLoadResult, TexturePoll}, SizeHint, TextureOptions,
+    },
+    epaint::{TextureHandle, Vec2},
 };
-use egui_plot::{Plot, PlotImage, PlotPoint, Points};
+use egui_plot::{Plot, PlotImage, PlotPoint};
 
 use crate::{
     gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos, AppGlobalState,
@@ -15,6 +18,8 @@ pub struct ThermalDisplayPane {
 
     camera_texture: Option<egui::TextureHandle>,
     camera_image_size: Option<(usize, usize)>,
+
+    crosshair_texture_load_result: Option<TextureLoadResult>,
     crosshair_texture: Option<egui::TextureHandle>,
 }
 
@@ -23,6 +28,7 @@ impl ThermalDisplayPane {
         ThermalDisplayPane {
             global_state,
             camera_texture: None,
+            crosshair_texture_load_result: None,
             crosshair_texture: None,
             camera_image_size: None,
         }
@@ -61,12 +67,25 @@ impl Pane for ThermalDisplayPane {
                 .map(|r| r.gizmo_results.clone())
                 .clone();
 
-            // let crosshair_texture = self.crosshair_texture.get_or_insert_with(|| {
-            //     let img: Image<'_> = Image::new(egui::include_image!("./icons/crosshair_center.svg"));
-            //     ui.ctx().try_load_image(uri, size_hint)
-            //     ui.ctx()
-            //         .load_texture("crosshair_ctx", img, Default::default())
-            // });
+            self.crosshair_texture_load_result.get_or_insert_with(|| {
+                egui::include_image!("./icons/crosshair_center.svg").load(
+                    ui.ctx(),
+                    TextureOptions::default(),
+                    SizeHint::Scale(5.0.into()),
+                )
+            });
+            if self.crosshair_texture.is_none() {
+                if let TexturePoll::Ready { texture } = self
+                    .crosshair_texture_load_result
+                    .as_ref()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                {
+                    self.crosshair_texture =
+                        Some(TextureHandle::new(ui.ctx().tex_manager(), texture.id))
+                }
+            }
 
             self.camera_texture.as_ref().and_then(|texture| {
                 let img_size = self.camera_image_size.unwrap();
@@ -77,7 +96,13 @@ impl Pane for ThermalDisplayPane {
                     .auto_bounds_x()
                     .auto_bounds_y()
                     .show(ui, |plot_ui| {
-                        let _points = global_state
+                        plot_ui.image(PlotImage::new(
+                            texture,
+                            PlotPoint::new(img_size.0 as f64 / 2.0, img_size.1 as f64 / 2.0),
+                            Vec2::new(img_size.0 as f32, img_size.1 as f32),
+                        ));
+
+                        global_state
                             .thermal_capturer_settings
                             .gizmo
                             .children_mut()
@@ -92,28 +117,28 @@ impl Pane for ThermalDisplayPane {
 
                                     let y = img_size.1 as f64 - result.pos.y as f64;
 
-                                    let _point = PlotPoint::new(x, y);
+                                    let point = PlotPoint::new(x, y);
                                     let _size = 10.0;
-                                    // plot_ui.image(
-                                    //     PlotImage::new(
-                                    //         crosshair_texture,
-                                    //         point,
-                                    //         Vec2::new(size, size),
-                                    //     )
-                                    //     .tint(color),
-                                    // )
-
-                                    plot_ui.points(
-                                        Points::new(vec![[x, y].into()]).color(c.color).radius(5.0),
-                                    );
+                                    if let Some(crosshair) = self.crosshair_texture.as_ref() {
+                                        // white backdrop for contrast
+                                        plot_ui.image(PlotImage::new(
+                                            crosshair,
+                                            point,
+                                            // 5 seems okay
+                                            Vec2::new(6.0, 6.0),
+                                        ));
+                                        plot_ui.image(
+                                            PlotImage::new(
+                                                crosshair,
+                                                point,
+                                                // 5 seems okay
+                                                Vec2::new(5.0, 5.0),
+                                            )
+                                            .tint(c.color),
+                                        );
+                                    }
                                 }
                             });
-
-                        plot_ui.image(PlotImage::new(
-                            texture,
-                            PlotPoint::new(img_size.0 as f64 / 2.0, img_size.1 as f64 / 2.0),
-                            Vec2::new(img_size.0 as f32, img_size.1 as f32),
-                        ));
 
                         if plot_ui.response().clicked() {
                             let pos = plot_ui.pointer_coordinate().unwrap();

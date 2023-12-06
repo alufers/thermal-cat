@@ -32,10 +32,11 @@ impl Pane for MeasurementsPane {
 
         Grid::new("measurements_pane_grid")
             .striped(true)
-            .num_columns(3)
+            .num_columns(4)
+            .min_col_width(40.0)
             .show(ui, |ui| {
                 ui.label("");
-                ui.label("Name");
+                ui.label("Value");
                 ui.label("Value");
                 ui.end_row();
 
@@ -46,6 +47,8 @@ impl Pane for MeasurementsPane {
                     .clone();
 
                 let temp_unit = global_state.preferred_temperature_unit();
+
+                let mut gizmo_uuid_to_remove = Option::None;
 
                 global_state
                     .thermal_capturer_settings
@@ -84,9 +87,46 @@ impl Pane for MeasurementsPane {
                                 .unwrap_or(" - ".to_string()),
                         );
 
-                        ui.add(TextEdit::singleline(&mut gizmo.name));
+
+                        ui.add_sized(
+                            [100.0, 20.0],
+                            TextEdit::singleline(&mut gizmo.name).desired_width(100.0),
+                        );
+
+                        match gizmo.kind {
+                            GizmoKind::MaxTemp => {
+                                ui.label("");
+                            }
+                            GizmoKind::MinTemp => {
+                                ui.label("");
+                            }
+                            _ => {
+                                if ui
+                                    .add(
+                                        ImageButton::new(Image::new(egui::include_image!(
+                                            "./icons/trash.svg"
+                                        )))
+                                        .frame(false),
+                                    )
+                                    .clicked()
+                                {
+                                    gizmo_uuid_to_remove = Some(gizmo.uuid);
+                                }
+                            }
+                        }
+
+
                         ui.end_row();
-                    })
+                    });
+
+                gizmo_uuid_to_remove.inspect(|uuid| {
+                    global_state
+                        .thermal_capturer_settings
+                        .gizmo
+                        .children_mut()
+                        .unwrap()
+                        .retain(|gizmo| gizmo.uuid != *uuid);
+                });
             });
     }
 }

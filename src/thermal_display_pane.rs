@@ -2,15 +2,12 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{
     egui::{self, TextureOptions},
-    epaint::{Vec2},
+    epaint::Vec2,
 };
 use egui_plot::{Plot, PlotImage, PlotPoint, Points};
 
 use crate::{
-    gizmos::{GizmoKind},
-    pane_dispatcher::Pane,
-    thermal_data::ThermalDataPos,
-    AppGlobalState,
+    gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos, AppGlobalState,
 };
 
 pub struct ThermalDisplayPane {
@@ -52,7 +49,7 @@ impl Pane for ThermalDisplayPane {
                         TextureOptions {
                             magnification: egui::TextureFilter::Nearest,
                             ..Default::default()
-                        }
+                        },
                     ));
                     self.camera_image_size = Some((res.image.width(), res.image.height()));
                     Some(())
@@ -120,18 +117,12 @@ impl Pane for ThermalDisplayPane {
 
                         if plot_ui.response().clicked() {
                             let pos = plot_ui.pointer_coordinate().unwrap();
-
-                            if pos.x > 0.0
-                                && pos.y > 0.0
-                                && pos.x < img_size.0 as f64
-                                && pos.y < img_size.1 as f64
-                            {
+                            let x = pos.x as usize;
+                            let y = pos.y as usize;
+                            if x > 0 && y > 0 && x < img_size.0 && y < img_size.1 {
                                 global_state.thermal_capturer_settings.gizmo.push_child(
                                     GizmoKind::TempAt {
-                                        pos: ThermalDataPos::new(
-                                            pos.x as usize,
-                                            img_size.1 - pos.y as usize,
-                                        ),
+                                        pos: ThermalDataPos::new(x, img_size.1 - y),
                                     },
                                     "Custom".to_string(),
                                 );

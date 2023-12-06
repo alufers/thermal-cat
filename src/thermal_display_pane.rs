@@ -1,13 +1,13 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use eframe::{
-    egui::{self, load::TexturePoll, Image, TextureOptions},
-    epaint::{ColorImage, Vec2},
+    egui::{self, TextureOptions},
+    epaint::{Vec2},
 };
 use egui_plot::{Plot, PlotImage, PlotPoint, Points};
 
 use crate::{
-    gizmos::{Gizmo, GizmoKind},
+    gizmos::{GizmoKind},
     pane_dispatcher::Pane,
     thermal_data::ThermalDataPos,
     AppGlobalState,
@@ -80,7 +80,7 @@ impl Pane for ThermalDisplayPane {
                     .auto_bounds_x()
                     .auto_bounds_y()
                     .show(ui, |plot_ui| {
-                        let points = global_state
+                        let _points = global_state
                             .thermal_capturer_settings
                             .gizmo
                             .children_mut()
@@ -89,14 +89,14 @@ impl Pane for ThermalDisplayPane {
                             .for_each(|c| {
                                 let result = gizmo_results.as_ref().and_then(|r| r.get(&c.uuid));
                                 if let Some(result) = result {
-                                    let color = c.color;
+                                    let _color = c.color;
 
                                     let x = result.pos.x as f64;
 
                                     let y = img_size.1 as f64 - result.pos.y as f64;
 
-                                    let point = PlotPoint::new(x, y);
-                                    let size = 10.0;
+                                    let _point = PlotPoint::new(x, y);
+                                    let _size = 10.0;
                                     // plot_ui.image(
                                     //     PlotImage::new(
                                     //         crosshair_texture,

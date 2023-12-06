@@ -11,10 +11,10 @@ use uuid::Uuid;
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::CameraAdapter,
-    gizmos::{self, Gizmo, GizmoKind, GizmoResult},
-    temperature::{Temp, TempRange, TemperatureUnit},
+    gizmos::{Gizmo, GizmoKind, GizmoResult},
+    temperature::{TempRange},
     thermal_data::{ThermalDataHistogram, ThermalDataRotation},
-    thermal_gradient::{ThermalGradient, THERMAL_GRADIENTS},
+    thermal_gradient::{ThermalGradient},
 };
 
 pub struct ThermalCapturerResult {

@@ -1,5 +1,4 @@
 #![feature(let_chains)]
-#![feature(result_option_inspect)]
 #![deny(elided_lifetimes_in_paths)]
 
 use std::{cell::RefCell, rc::Rc};

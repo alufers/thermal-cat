@@ -4,7 +4,7 @@ use eframe::{
     egui::{
         self,
         color_picker::{color_picker_color32, Alpha},
-        Area, Button, Frame, Grid, Image, ImageButton, Key, Order, Response, TextEdit, Ui, Widget,
+        Area, Frame, Grid, Image, ImageButton, Key, Order, Response, TextEdit, Ui, Widget,
     },
     epaint::Color32,
 };
@@ -93,7 +93,7 @@ impl Pane for MeasurementsPane {
 
 pub fn color_icon_rgb(ui: &mut Ui, icon: impl Widget, rgb: &mut Color32, alpha: Alpha) -> Response {
     let popup_id = ui.auto_id_with("popup");
-    let open = ui.memory(|mem| mem.is_popup_open(popup_id));
+    let _open = ui.memory(|mem| mem.is_popup_open(popup_id));
     let mut button_response = ui.add(icon);
     if ui.style().explanation_tooltips {
         button_response = button_response.on_hover_text("Click to edit color");

@@ -134,6 +134,8 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
 }
 
 //
+// On macOS the misc field of the CameraInfo struct is the AVCaptureDevice uniqueID.
+//
 // In the case of video devices, the AVCaptureDevice uniqueID seems to a string in the form "0xLLLLLLLLVVVVPPPP", where:
 // LLLLLLLL is the hexadecimal string representing the USB device's location ID
 // VVVV is the hexadecimal string representing the USB device's manufacturer ID
@@ -153,4 +155,24 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     let vid = u16::from_str_radix(&unique_id[unique_id.len() - 8..unique_id.len() - 4], 16);
 
     vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
+}
+
+
+static WINDOWS_USB_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"usb#vid_([0-9a-fA-F]+)&pid_([0-9a-fA-F]+)").unwrap());
+
+// On Windows the misc field of the CameraInfo struct is the device path.
+//
+// Windows:
+// cams: [CameraInfo { human_name: "USB Camera", description: "MediaFoundation Camera", misc: "\\\\?\\usb#vid_0bda&pid_5830&mi_00#8&3e3b7c5&0&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\\global", index: Index(0) }]
+//
+#[cfg(target_os = "windows")]
+fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
+    let device_path: String = info.misc();
+
+    WINDOWS_USB_REGEX.captures(&device_path).and_then(|captures| {
+        let vid = u16::from_str_radix(captures.get(1).unwrap().as_str(), 16).unwrap();
+        let pid = u16::from_str_radix(captures.get(2).unwrap().as_str(), 16).unwrap();
+        return Some((vid, pid));
+    })
+
 }

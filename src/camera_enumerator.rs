@@ -38,7 +38,7 @@ impl EnumeratedCamera {
             &self.info.human_name().clone(),
             0.0,
             TextFormat {
-                color: Color32::WHITE,
+                color: Color32::GRAY,
                 ..Default::default()
             },
         );

@@ -102,9 +102,17 @@ impl Pane for MeasurementsPane {
                             _ => {
                                 if ui
                                     .add(
-                                        ImageButton::new(Image::new(egui::include_image!(
-                                            "./icons/trash.svg"
-                                        )))
+                                        ImageButton::new(
+                                            Image::new(egui::include_image!("./icons/trash.svg"))
+                                                .tint(
+                                                    ui.style()
+                                                        .visuals
+                                                        .widgets
+                                                        .active
+                                                        .fg_stroke
+                                                        .color,
+                                                ),
+                                        )
                                         .frame(false),
                                     )
                                     .clicked()
@@ -139,7 +147,6 @@ pub fn color_icon_rgb(ui: &mut Ui, icon: impl Widget, rgb: &mut Color32, alpha: 
 
     if button_response.clicked() {
         ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-        println!("clicked");
     }
 
     const COLOR_SLIDER_WIDTH: f32 = 210.0;

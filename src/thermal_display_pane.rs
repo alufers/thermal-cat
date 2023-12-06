@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use eframe::{
-    egui::{self, load::TexturePoll, Image},
+    egui::{self, load::TexturePoll, Image, TextureOptions},
     epaint::{ColorImage, Vec2},
 };
 use egui_plot::{Plot, PlotImage, PlotPoint, Points};
@@ -49,7 +49,10 @@ impl Pane for ThermalDisplayPane {
                     self.camera_texture = Some(ui.ctx().load_texture(
                         "cam_ctx",
                         res.image.clone(),
-                        Default::default(),
+                        TextureOptions {
+                            magnification: egui::TextureFilter::Nearest,
+                            ..Default::default()
+                        }
                     ));
                     self.camera_image_size = Some((res.image.width(), res.image.height()));
                     Some(())

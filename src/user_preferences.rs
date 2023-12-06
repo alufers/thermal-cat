@@ -1,13 +1,15 @@
-use std::{fs::{File, self}, io::{BufReader, BufWriter}};
+use std::{
+    fs::{self, File},
+    io::{BufReader, BufWriter},
+};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
 use crate::temperature::TemperatureUnit;
 
 const MAX_KNOWN_PREFERENCES_VERSION: u32 = 1;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserPreferences {
@@ -40,7 +42,10 @@ impl UserPreferences {
         let reader = BufReader::new(file);
         let prefs: UserPreferences = serde_json::from_reader(reader)?;
         if prefs.preferences_version > MAX_KNOWN_PREFERENCES_VERSION {
-            return Err(anyhow::anyhow!("Unknown preferences version {}", prefs.preferences_version));
+            return Err(anyhow::anyhow!(
+                "Unknown preferences version {}",
+                prefs.preferences_version
+            ));
         }
         Ok(prefs)
     }

@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 // 0.17.1
 use strum_macros::{Display, EnumIter}; // 0.17.1

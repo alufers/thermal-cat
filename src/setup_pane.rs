@@ -31,10 +31,11 @@ impl SetupPane {
         let cameras = enumerate_cameras().inspect_err(|err| {
             eprintln!("Failed to enumerate cameras: {:#}", err);
         });
-       
+
         SetupPane {
             global_state,
-            selected_camera_index: cameras.as_ref()
+            selected_camera_index: cameras
+                .as_ref()
                 .ok()
                 .and_then(|cameras| {
                     cameras
@@ -146,7 +147,10 @@ impl Pane for SetupPane {
                     });
             }
             Err(ref err) => {
-                ui.colored_label(egui::Color32::RED, format!("Camera enumeration error: {}", err));
+                ui.colored_label(
+                    egui::Color32::RED,
+                    format!("Camera enumeration error: {}", err),
+                );
             }
         }
 

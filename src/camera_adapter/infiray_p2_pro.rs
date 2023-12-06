@@ -1,20 +1,17 @@
-
-
 use nokhwa::{
     pixel_format::RgbFormat,
-    utils::{CameraFormat, FrameFormat, RequestedFormat, RequestedFormatType, Resolution}, NokhwaError,
+    utils::{CameraFormat, FrameFormat, RequestedFormat, RequestedFormatType, Resolution},
+    NokhwaError,
 };
 
-use crate::{thermal_data::ThermalData, temperature::Temp};
+use crate::{temperature::Temp, thermal_data::ThermalData};
 
 use super::CameraAdapter;
 
 const IMAGE_WIDTH: u32 = 256;
 const IMAGE_HEIGHT: u32 = 192;
 
-pub struct InfirayP2ProAdapter {
-  
-}
+pub struct InfirayP2ProAdapter {}
 
 //
 // Camera adapter for the Infiray P2 Pro
@@ -28,7 +25,6 @@ pub struct InfirayP2ProAdapter {
 // The uint16 thermal data is a 256x192 array of 16-bit unsigned integers, representing the temperature in 1/64th's Kelvin
 //
 impl CameraAdapter for InfirayP2ProAdapter {
-
     fn name(&self) -> String {
         "Infiray P2 Pro".to_string()
     }
@@ -47,14 +43,10 @@ impl CameraAdapter for InfirayP2ProAdapter {
 
     ///
     /// Capture and return thermal data
-    fn capture_thermal_data(
-        &self,
-        cam: &mut nokhwa::Camera,
-    ) -> Result<ThermalData, NokhwaError> {
+    fn capture_thermal_data(&self, cam: &mut nokhwa::Camera) -> Result<ThermalData, NokhwaError> {
         let frame = cam.frame()?;
 
         let frame_data = frame.buffer();
-
 
         // crop to the bottom half of the frame, which contains the thermal data
         // We have IMAGE_WIDTH * IMAGE_HEIGHT times 2 bytes per pixel (YUYV)
@@ -67,9 +59,11 @@ impl CameraAdapter for InfirayP2ProAdapter {
         Ok::<ThermalData, NokhwaError>(ThermalData::new(
             IMAGE_WIDTH as usize,
             IMAGE_HEIGHT as usize,
-            u16_temperature_data.iter().map(|&x| Temp::new(x as f32 / 64.0)).collect(),
+            u16_temperature_data
+                .iter()
+                .map(|&x| Temp::new(x as f32 / 64.0))
+                .collect(),
         ))
-
     }
 
     fn usb_vid_pid(&self) -> (u16, u16) {

@@ -119,7 +119,6 @@ impl ThermalData {
             data,
         }
     }
-
 }
 
 #[derive(Clone, Debug)]

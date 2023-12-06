@@ -61,7 +61,7 @@ impl AutoDisplayRangeController {
             self.current.min + self.shrink_range_min_headroom,
             self.current.max - self.shrink_range_max_headroom,
         );
-       
+
         // check clipping
         if !self.current.contains_range(captured_range) {
             self.clipping_time += delta;
@@ -81,7 +81,7 @@ impl AutoDisplayRangeController {
                     captured_range.max + self.new_range_max_headroom,
                 );
                 self.anim_target_range = Some(target);
-                 
+
                 self.anim_progress = Duration::from_secs(0);
             }
         } else {

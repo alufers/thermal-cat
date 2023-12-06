@@ -87,7 +87,6 @@ impl Pane for MeasurementsPane {
                                 .unwrap_or(" - ".to_string()),
                         );
 
-
                         ui.add_sized(
                             [100.0, 20.0],
                             TextEdit::singleline(&mut gizmo.name).desired_width(100.0),
@@ -114,7 +113,6 @@ impl Pane for MeasurementsPane {
                                 }
                             }
                         }
-
 
                         ui.end_row();
                     });

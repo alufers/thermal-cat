@@ -3,7 +3,8 @@ use std::{cell::RefCell, rc::Rc};
 use eframe::{
     egui::{
         self,
-        load::{TextureLoadResult, TexturePoll}, SizeHint, TextureOptions,
+        load::{TextureLoadResult, TexturePoll},
+        SizeHint, TextureOptions,
     },
     epaint::{TextureHandle, Vec2},
 };

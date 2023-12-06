@@ -12,9 +12,9 @@ use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::CameraAdapter,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
-    temperature::{TempRange},
+    temperature::TempRange,
     thermal_data::{ThermalDataHistogram, ThermalDataRotation},
-    thermal_gradient::{ThermalGradient},
+    thermal_gradient::ThermalGradient,
 };
 
 pub struct ThermalCapturerResult {

@@ -157,8 +157,8 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
 }
 
-
-static WINDOWS_USB_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"usb#vid_([0-9a-fA-F]+)&pid_([0-9a-fA-F]+)").unwrap());
+static WINDOWS_USB_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"usb#vid_([0-9a-fA-F]+)&pid_([0-9a-fA-F]+)").unwrap());
 
 // On Windows the misc field of the CameraInfo struct is the device path.
 //
@@ -169,10 +169,11 @@ static WINDOWS_USB_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"usb#vid_([0-9a
 fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     let device_path: String = info.misc();
 
-    WINDOWS_USB_REGEX.captures(&device_path).and_then(|captures| {
-        let vid = u16::from_str_radix(captures.get(1).unwrap().as_str(), 16).unwrap();
-        let pid = u16::from_str_radix(captures.get(2).unwrap().as_str(), 16).unwrap();
-        return Some((vid, pid));
-    })
-
+    WINDOWS_USB_REGEX
+        .captures(&device_path)
+        .and_then(|captures| {
+            let vid = u16::from_str_radix(captures.get(1).unwrap().as_str(), 16).unwrap();
+            let pid = u16::from_str_radix(captures.get(2).unwrap().as_str(), 16).unwrap();
+            return Some((vid, pid));
+        })
 }

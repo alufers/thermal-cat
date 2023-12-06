@@ -5,7 +5,7 @@ use std::{
 };
 
 use eframe::epaint::{ahash::HashMap, ColorImage};
-use nokhwa::Camera;
+use nokhwa::{Camera, pixel_format::RgbFormat};
 use uuid::Uuid;
 
 use crate::{
@@ -103,6 +103,13 @@ impl ThermalCapturer {
                     .unwrap()
                     .rotated(ctx.settings.rotation);
 
+                let fra = ctx.camera.frame().unwrap();
+                let deco = fra.decode_image::<RgbFormat>().unwrap();
+                let dims = deco.dimensions();
+                
+                let data_buf = deco.into_raw();
+                let dupa_image = ColorImage::from_rgb([dims.0 as usize, dims.1 as usize], &data_buf );
+
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();
 
                 let captured_range = TempRange::new(
@@ -161,7 +168,7 @@ impl ThermalCapturer {
                     });
 
                 let result = Box::new(ThermalCapturerResult {
-                    image,
+                    image: dupa_image,
                     real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
                     image_range: mapping_range,

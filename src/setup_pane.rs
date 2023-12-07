@@ -108,6 +108,17 @@ impl Pane for SetupPane {
             }
         }
 
+        if global_state
+            .hotplug_detector_receiver
+            .as_mut()
+            .and_then(|r| r.try_recv().ok())
+            .is_some()
+        {
+            self.cameras = enumerate_cameras().inspect_err(|err| {
+                eprintln!("Failed to enumerate cameras: {:#}", err);
+            });
+        }
+
         ui.heading("Open Thermal Viewer");
         ui.separator();
         ui.label("Select Camera");

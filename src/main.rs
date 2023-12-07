@@ -1,11 +1,12 @@
 #![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::mpsc::Receiver};
 
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
+use hotplug_detector::{run_hotplug_detector, HotplugEvent};
 use log::error;
 
 use measurements_pane::MeasurementsPane;
@@ -30,6 +31,7 @@ mod camera_enumerator;
 mod gizmos;
 mod gradient_selector_widget;
 mod histogram_pane;
+mod hotplug_detector;
 mod measurements_pane;
 mod pane_dispatcher;
 mod setup_pane;
@@ -67,6 +69,7 @@ pub struct AppGlobalState {
     thermal_capturer_settings: ThermalCapturerSettings,
     prefs: Option<UserPreferences>,
     last_thermal_capturer_result: Option<Box<ThermalCapturerResult>>,
+    hotplug_detector_receiver: Option<Receiver<HotplugEvent>>,
 }
 
 impl AppGlobalState {
@@ -137,6 +140,7 @@ impl Default for ThermalViewerApp {
                 ]),
             },
             last_thermal_capturer_result: None,
+            hotplug_detector_receiver: None,
         };
 
         ThermalViewerApp {
@@ -154,12 +158,17 @@ impl eframe::App for ThermalViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame_egui: &mut eframe::Frame) {
         if !self.did_init {
             self.did_init = true;
-            self.global_state.borrow_mut().prefs = Some(
+            self.set_default_dock_state();
+            let mut borrowed_global_state = self.global_state.borrow_mut();
+            borrowed_global_state.prefs = Some(
                 UserPreferences::load()
                     .inspect_err(|err| error!("Failed to load user preferences: {}", err))
                     .unwrap_or_default(),
             );
-            self.set_default_dock_state();
+            let _cloned_ctx = ctx.clone();
+
+            borrowed_global_state.hotplug_detector_receiver =
+                run_hotplug_detector(move |_| {}).ok();
         }
 
         {

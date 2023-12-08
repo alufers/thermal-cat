@@ -65,7 +65,6 @@ impl Pane for HistogramPane {
         );
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
         Plot::new("Temperature distribution plot")
-            .clamp_grid(true)
             .auto_bounds_x()
             .auto_bounds_y()
             .y_axis_label("% of image")
@@ -73,6 +72,8 @@ impl Pane for HistogramPane {
                 "Temperature ({})",
                 global_state.preferred_temperature_unit().suffix()
             ))
+            .include_y(0.0)
+            .include_y(30.0)
             .y_axis_formatter(|factor, _max_chars, _range| format!("{:.0}%", factor))
             .x_axis_formatter(move |temp_val, _max_chars, _range| {
                 return format!("{:.0} {}", temp_val, unit_suffix);

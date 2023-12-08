@@ -10,7 +10,7 @@ anyhow = "1.0.75"
 dirs = "5.0.1"
 eframe = { version = "0.24.1", features = ["wgpu"] }
 egui_dock = "0.9.0"
-egui_extras = { version = "0.24.1", features = ["svg"] }
+egui_extras = { version = "0.24.2", features = ["svg"] }
 egui_plot = "0.24.1"
 env_logger = "0.10.1"
 log = "0.4.20"

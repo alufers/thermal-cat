@@ -116,7 +116,7 @@ impl Pane for SetupPane {
             }
         }
 
-        if let Some(evt) = global_state
+        if let Some(_evt) = global_state
             .hotplug_detector
             .as_mut()
             .and_then(|r| r.receiver.try_recv().ok())

@@ -1,12 +1,12 @@
 #![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
-use std::{cell::RefCell, rc::Rc, sync::mpsc::Receiver};
+use std::{cell::RefCell, rc::Rc};
 
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
-use hotplug_detector::{run_hotplug_detector, HotplugDetector, HotplugEvent};
+use hotplug_detector::{run_hotplug_detector, HotplugDetector};
 use log::error;
 
 use measurements_pane::MeasurementsPane;

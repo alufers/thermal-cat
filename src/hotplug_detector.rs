@@ -1,7 +1,7 @@
-use std::{thread, sync::Arc, fmt, time::Duration};
+use std::{thread, sync::Arc, fmt};
 
 use eframe::epaint::mutex::Mutex;
-use env_logger::fmt::Formatter;
+
 use rusb::{Context, Device, HotplugBuilder, UsbContext};
 
 

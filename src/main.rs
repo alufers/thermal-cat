@@ -6,7 +6,7 @@ use std::{cell::RefCell, rc::Rc, sync::mpsc::Receiver};
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
-use hotplug_detector::{run_hotplug_detector, HotplugEvent};
+use hotplug_detector::{run_hotplug_detector, HotplugDetector, HotplugEvent};
 use log::error;
 
 use measurements_pane::MeasurementsPane;
@@ -65,11 +65,13 @@ fn main() -> Result<(), eframe::Error> {
 
 pub struct AppGlobalState {
     did_try_open_camera_at_startup: bool,
+    should_try_open_camera_on_next_hotplug: bool,
+
     thermal_capturer_inst: Option<ThermalCapturer>,
     thermal_capturer_settings: ThermalCapturerSettings,
     prefs: Option<UserPreferences>,
     last_thermal_capturer_result: Option<Box<ThermalCapturerResult>>,
-    hotplug_detector_receiver: Option<Receiver<HotplugEvent>>,
+    hotplug_detector: Option<HotplugDetector>,
 }
 
 impl AppGlobalState {
@@ -120,6 +122,8 @@ impl Default for ThermalViewerApp {
         let _backend = native_api_backend().unwrap();
         let global_state = AppGlobalState {
             did_try_open_camera_at_startup: false,
+            should_try_open_camera_on_next_hotplug: true,
+
             prefs: None,
             thermal_capturer_inst: None,
             thermal_capturer_settings: ThermalCapturerSettings {
@@ -140,7 +144,7 @@ impl Default for ThermalViewerApp {
                 ]),
             },
             last_thermal_capturer_result: None,
-            hotplug_detector_receiver: None,
+            hotplug_detector: None,
         };
 
         ThermalViewerApp {
@@ -165,10 +169,20 @@ impl eframe::App for ThermalViewerApp {
                     .inspect_err(|err| error!("Failed to load user preferences: {}", err))
                     .unwrap_or_default(),
             );
-            let _cloned_ctx = ctx.clone();
+            let cloned_ctx = ctx.clone();
 
-            borrowed_global_state.hotplug_detector_receiver =
-                run_hotplug_detector(move |_| {}).ok();
+            borrowed_global_state.hotplug_detector = run_hotplug_detector(move |_| {
+                cloned_ctx.request_repaint();
+            })
+            .inspect_err(|e| {
+                error!("Failed to start hotplug detector: {}", e);
+            })
+            .ok();
+            borrowed_global_state.should_try_open_camera_on_next_hotplug = borrowed_global_state
+                .prefs
+                .as_ref()
+                .map(|p| p.auto_open_camera)
+                .unwrap_or_default();
         }
 
         {

@@ -18,6 +18,8 @@ use crate::thermal_capturer::ThermalCapturer;
 use crate::thermal_data::ThermalDataRotation;
 use crate::AppGlobalState;
 
+use anyhow::{Context, Result};
+
 pub struct SetupPane {
     global_state: Rc<RefCell<AppGlobalState>>,
     cameras: Result<Vec<EnumeratedCamera>, Error>,
@@ -58,38 +60,44 @@ impl SetupPane {
         })
     }
 
-    fn open_selected_camera(&mut self, ctx: &egui::Context, global_state: &mut AppGlobalState) {
-        if let Some(adapter) = self.selected_camera_info().and_then(|i| i.adapter.as_ref()) {
-            let cloned_ctx = ctx.clone();
-            let cloned_adapter = adapter.clone();
+    fn open_selected_camera(
+        &mut self,
+        ctx: &egui::Context,
+        global_state: &mut AppGlobalState,
+    ) -> Result<()> {
+        let adapter = self
+            .selected_camera_info()
+            .and_then(|i| i.adapter.as_ref())
+            .context("No camera selected")?;
+        let cloned_ctx = ctx.clone();
+        let cloned_adapter = adapter.clone();
 
-            let _ = Camera::new(
-                self.selected_camera_index.clone(),
-                adapter.requested_format(),
-            )
-            .and_then(|cam| {
-                // Create thermal capturer
+        Camera::new(
+            self.selected_camera_index.clone(),
+            adapter.requested_format(),
+        )
+        .and_then(|cam| {
+            // Create thermal capturer
 
-                global_state.thermal_capturer_inst = Some(ThermalCapturer::new(
-                    cam,
-                    cloned_adapter,
-                    global_state.thermal_capturer_settings.clone(),
-                    Arc::new(move || {
-                        cloned_ctx.request_repaint(); // repaint so that the result can be read out
-                    }),
-                ))
-                .and_then(|mut capturer| {
-                    capturer.start();
-                    Some(capturer)
-                });
-                self.open_camera_error = None;
-                Ok(())
-            })
-            .or_else(|err| {
-                self.open_camera_error = Some(format!("Failed to open camera: {}", err));
-                Err(err)
+            global_state.thermal_capturer_inst = Some(ThermalCapturer::new(
+                cam,
+                cloned_adapter,
+                global_state.thermal_capturer_settings.clone(),
+                Arc::new(move || {
+                    cloned_ctx.request_repaint(); // repaint so that the result can be read out
+                }),
+            ))
+            .and_then(|mut capturer| {
+                capturer.start();
+                Some(capturer)
             });
-        }
+            self.open_camera_error = None;
+            Ok(())
+        })
+        .inspect_err(|err| {
+            self.open_camera_error = Some(format!("Failed to open camera: {}", err));
+        })
+        .context("Failed to open camera")
     }
 }
 
@@ -104,19 +112,44 @@ impl Pane for SetupPane {
         if !global_state.did_try_open_camera_at_startup {
             global_state.did_try_open_camera_at_startup = true;
             if global_state.prefs.as_ref().unwrap().auto_open_camera {
-                self.open_selected_camera(ui.ctx(), &mut global_state);
+                let _ = self.open_selected_camera(ui.ctx(), &mut global_state);
             }
         }
 
-        if global_state
-            .hotplug_detector_receiver
+        if let Some(evt) = global_state
+            .hotplug_detector
             .as_mut()
-            .and_then(|r| r.try_recv().ok())
-            .is_some()
+            .and_then(|r| r.receiver.try_recv().ok())
         {
             self.cameras = enumerate_cameras().inspect_err(|err| {
                 eprintln!("Failed to enumerate cameras: {:#}", err);
             });
+            if global_state.should_try_open_camera_on_next_hotplug
+                && global_state.thermal_capturer_inst.is_none()
+            {
+                // select a camera with an adapter if possible
+                if !self
+                    .selected_camera_info()
+                    .as_ref()
+                    .map(|i| i.adapter.is_some())
+                    .unwrap_or(false)
+                {
+                    self.selected_camera_index = self
+                        .cameras
+                        .as_ref()
+                        .ok()
+                        .and_then(|cameras| {
+                            cameras
+                                .iter()
+                                .find(|camera| camera.adapter.is_some())
+                                .map(|camera| camera.info.index().clone())
+                        })
+                        .unwrap_or(CameraIndex::Index(0));
+                }
+
+                // try to open the camera
+                let _ = self.open_selected_camera(ui.ctx(), &mut global_state);
+            }
         }
 
         ui.heading("Open Thermal Viewer");
@@ -165,6 +198,13 @@ impl Pane for SetupPane {
             }
         }
 
+        if global_state.should_try_open_camera_on_next_hotplug {
+            ui.colored_label(
+                egui::Color32::GREEN,
+                "Plug in a supported camera to start preview.",
+            );
+        }
+
         if global_state.thermal_capturer_inst.is_none() {
             // Show the "Open Camera" button only if the selected camera exists and has an adapter
             if ui
@@ -176,11 +216,13 @@ impl Pane for SetupPane {
                 )
                 .clicked()
             {
-                self.open_selected_camera(ui.ctx(), &mut global_state);
+                let _ = self.open_selected_camera(ui.ctx(), &mut global_state);
+                global_state.should_try_open_camera_on_next_hotplug = true;
             }
         } else {
             if ui.button("Close Camera").clicked() {
                 global_state.thermal_capturer_inst = None;
+                global_state.should_try_open_camera_on_next_hotplug = false;
             }
         }
 

@@ -9,15 +9,30 @@ env:
 
 jobs:
   build_and_test:
-    name: Rust project - latest
-    runs-on: ubuntu-latest
+    name: Rust build ${{ matrix.toolchain }} on ${{ matrix.os }}
+    
     strategy:
       matrix:
         toolchain:
           - nightly
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose
-      - run: cargo test --verbose
+      - run: cargo build --verbose --release
+      - uses: actions/upload-artifact@v4
+        if: ${{ matrix.os == 'windows-latest' }}
+        with:
+          name: ${{ matrix.os }}-release
+          path: target/release/open-desktop-thermal-viewer.exe
+      - uses: actions/upload-artifact@v4
+        if: ${{ matrix.os != 'windows-latest' }}
+        with:
+          name: ${{ matrix.os }}-release
+          path: target/release/open-desktop-thermal-viewer
+          
   

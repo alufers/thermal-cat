@@ -6,6 +6,7 @@ use std::{cell::RefCell, rc::Rc};
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
+use history_data_collector::HistoryDataCollector;
 use hotplug_detector::{run_hotplug_detector, HotplugDetector};
 use log::error;
 
@@ -43,6 +44,7 @@ mod thermal_display_pane;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
+mod history_data_collector;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -72,6 +74,7 @@ pub struct AppGlobalState {
     prefs: Option<UserPreferences>,
     last_thermal_capturer_result: Option<Box<ThermalCapturerResult>>,
     hotplug_detector: Option<HotplugDetector>,
+    history_data_collector: HistoryDataCollector,
 }
 
 impl AppGlobalState {
@@ -145,6 +148,7 @@ impl Default for ThermalViewerApp {
             },
             last_thermal_capturer_result: None,
             hotplug_detector: None,
+            history_data_collector: HistoryDataCollector::new(),
         };
 
         ThermalViewerApp {
@@ -200,6 +204,10 @@ impl eframe::App for ThermalViewerApp {
                 let had_result = result.is_some();
 
                 if let Some(result) = result {
+                    borrowed_global_state
+                        .history_data_collector
+                        .add_from_gizmo_results(result.capture_time, &result.gizmo_results)
+                        .unwrap();
                     borrowed_global_state.last_thermal_capturer_result = Some(result);
                 }
 

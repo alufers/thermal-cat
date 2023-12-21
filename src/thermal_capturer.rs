@@ -1,10 +1,10 @@
 use std::{
     mem,
     sync::{mpsc, Arc},
-    thread,
+    thread, collections::HashMap,
 };
 
-use eframe::epaint::{ahash::HashMap, ColorImage};
+use eframe::epaint::{ColorImage};
 use nokhwa::Camera;
 use uuid::Uuid;
 
@@ -24,6 +24,7 @@ pub struct ThermalCapturerResult {
     pub reported_fps: f32,
     pub histogram: ThermalDataHistogram,
     pub gizmo_results: HashMap<Uuid, GizmoResult>,
+    pub capture_time: std::time::Instant,
 }
 
 #[derive(Clone)]
@@ -102,6 +103,7 @@ impl ThermalCapturer {
                     .capture_thermal_data(&mut ctx.camera)
                     .unwrap()
                     .rotated(ctx.settings.rotation);
+                let capture_time = std::time::Instant::now();
 
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();
 
@@ -171,6 +173,7 @@ impl ThermalCapturer {
                         100,
                     ),
                     gizmo_results,
+                    capture_time,
                 });
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();

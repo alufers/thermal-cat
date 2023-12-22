@@ -1,9 +1,8 @@
-use std::{thread, sync::Arc, fmt};
+use std::{fmt, sync::Arc, thread};
 
 use eframe::epaint::mutex::Mutex;
 
 use rusb::{Context, Device, HotplugBuilder, UsbContext};
-
 
 #[derive(Copy, Clone)]
 pub enum HotplugEvent {
@@ -14,29 +13,41 @@ pub enum HotplugEvent {
 impl fmt::Display for HotplugEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            HotplugEvent::DeviceArrived { vendor_id, product_id } => {
+            HotplugEvent::DeviceArrived {
+                vendor_id,
+                product_id,
+            } => {
                 // print as hex
-                write!(f, "DeviceArrived {{ vendor_id: {:#06x}, product_id:  {:#06x} }}", vendor_id, product_id)
+                write!(
+                    f,
+                    "DeviceArrived {{ vendor_id: {:#06x}, product_id:  {:#06x} }}",
+                    vendor_id, product_id
+                )
             }
-            HotplugEvent::DeviceLeft { vendor_id, product_id } => {
-                write!(f, "DeviceLeft {{ vendor_id: {:#06x}, product_id: {:#06x} }}", vendor_id, product_id)
+            HotplugEvent::DeviceLeft {
+                vendor_id,
+                product_id,
+            } => {
+                write!(
+                    f,
+                    "DeviceLeft {{ vendor_id: {:#06x}, product_id: {:#06x} }}",
+                    vendor_id, product_id
+                )
             }
         }
     }
 }
 
-
 type HotplugtEventCallback = dyn Fn(HotplugEvent) -> () + Send;
 
 pub struct HotplugDetector {
     pub receiver: std::sync::mpsc::Receiver<HotplugEvent>,
-    callback: Arc::<Mutex::<Option::<Box<HotplugtEventCallback>>>>,
+    callback: Arc<Mutex<Option<Box<HotplugtEventCallback>>>>,
 }
-
 
 pub struct HotplugEventHandler {
     evt_sender: std::sync::mpsc::Sender<HotplugEvent>,
-    callback: Arc::<Mutex::<Option::<Box<HotplugtEventCallback>>>>,
+    callback: Arc<Mutex<Option<Box<HotplugtEventCallback>>>>,
 }
 
 impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
@@ -58,7 +69,7 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             .device_descriptor()
             .map(|d| (d.vendor_id(), d.product_id()))
             .unwrap_or((0, 0));
-        let evt =  HotplugEvent::DeviceLeft {
+        let evt = HotplugEvent::DeviceLeft {
             vendor_id,
             product_id,
         };
@@ -66,7 +77,6 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
         self.callback.lock().as_ref().map(|cb| cb(evt));
     }
 }
-
 
 pub fn run_hotplug_detector<F: Fn(HotplugEvent) -> () + Send + 'static>(
     callback: F,
@@ -86,7 +96,7 @@ pub fn run_hotplug_detector<F: Fn(HotplugEvent) -> () + Send + 'static>(
                     callback: detector.callback.clone(),
                 }),
             )?);
-       
+
         thread::spawn(move || {
             loop {
                 let result = context.handle_events(None);

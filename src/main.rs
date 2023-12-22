@@ -3,6 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use chart_pane::ChartPane;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
@@ -29,9 +30,11 @@ use user_preferences_window::UserPreferencesWindow;
 mod auto_display_range_controller;
 mod camera_adapter;
 mod camera_enumerator;
+mod chart_pane;
 mod gizmos;
 mod gradient_selector_widget;
 mod histogram_pane;
+mod history_data_collector;
 mod hotplug_detector;
 mod measurements_pane;
 mod pane_dispatcher;
@@ -44,7 +47,6 @@ mod thermal_display_pane;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
-mod history_data_collector;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -109,7 +111,10 @@ impl ThermalViewerApp {
         self.dock_state.main_surface_mut().split_below(
             right,
             0.7,
-            vec![Box::new(HistogramPane::new(self.global_state.clone()))],
+            vec![
+                Box::new(HistogramPane::new(self.global_state.clone())),
+                Box::new(ChartPane::new(self.global_state.clone())),
+            ],
         );
 
         self.dock_state.main_surface_mut().split_below(

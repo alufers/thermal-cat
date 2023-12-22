@@ -1,10 +1,11 @@
 use std::{
+    collections::HashMap,
     mem,
     sync::{mpsc, Arc},
-    thread, collections::HashMap,
+    thread,
 };
 
-use eframe::epaint::{ColorImage};
+use eframe::epaint::ColorImage;
 use nokhwa::Camera;
 use uuid::Uuid;
 

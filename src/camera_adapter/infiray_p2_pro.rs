@@ -44,9 +44,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
     ///
     /// Capture and return thermal data
     fn capture_thermal_data(&self, cam: &mut nokhwa::Camera) -> Result<ThermalData, NokhwaError> {
-        let frame = cam.frame()?;
-
-        let frame_data = frame.buffer();
+        let frame_data: std::borrow::Cow<'_, [u8]> = cam.frame_raw()?;
 
         // crop to the bottom half of the frame, which contains the thermal data
         // We have IMAGE_WIDTH * IMAGE_HEIGHT times 2 bytes per pixel (YUYV)

@@ -11,11 +11,33 @@ use crate::{pane_dispatcher::Pane, AppGlobalState};
 
 pub struct ChartPane {
     global_state: Rc<RefCell<AppGlobalState>>,
+    display_duration: Duration,
 }
 
 impl ChartPane {
+    const POSSIBLE_DURATIONS: [Duration; 3] = [
+        Duration::from_secs(60 * 15),
+        Duration::from_secs(60 * 5),
+        Duration::from_secs(60 * 1),
+    ];
     pub fn new(global_state: Rc<RefCell<AppGlobalState>>) -> ChartPane {
-        ChartPane { global_state }
+        ChartPane {
+            global_state,
+            display_duration: Self::POSSIBLE_DURATIONS[2],
+        }
+    }
+
+    fn duration_to_string(duration: Duration) -> String {
+        let minutes = duration.as_secs() / 60;
+        let seconds = duration.as_secs() % 60;
+        let mut str = "".to_string();
+        if minutes > 0 {
+            str.push_str(&format!("{}m", minutes));
+        }
+        if seconds > 0 {
+            str.push_str(&format!("{}s", seconds));
+        }
+        str
     }
 }
 
@@ -29,7 +51,20 @@ impl Pane for ChartPane {
         let mut global_state = global_state_clone.as_ref().borrow_mut();
 
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
-
+        egui::menu::bar(ui, |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                Self::POSSIBLE_DURATIONS.iter().for_each(|&duration| {
+                    if ui
+                        .selectable_value(
+                            &mut self.display_duration,
+                            duration,
+                            Self::duration_to_string(duration),
+                        )
+                        .changed()
+                    {}
+                });
+            });
+        });
         Plot::new("Chart")
             .auto_bounds_x()
             .auto_bounds_y()

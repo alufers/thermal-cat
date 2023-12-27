@@ -198,7 +198,9 @@ impl Pane for SetupPane {
             }
         }
 
-        if global_state.should_try_open_camera_on_next_hotplug {
+        if global_state.should_try_open_camera_on_next_hotplug
+            && global_state.thermal_capturer_inst.is_none()
+        {
             ui.colored_label(
                 egui::Color32::GREEN,
                 "Plug in a supported camera to start preview.",

@@ -8,9 +8,9 @@ use crate::{temperature::Temp, thermal_data::ThermalData};
 
 use super::CameraAdapter;
 
-const IMAGE_WIDTH: u32 = 256;
-const IMAGE_HEIGHT: u32 = 192;
-
+const IMAGE_WIDTH: u32 = 128;
+const IMAGE_HEIGHT: u32 = 96/2;
+const FRAME_RATE: u32 = 10;
 pub struct InfirayP2ProAdapter {}
 
 //
@@ -33,7 +33,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
         return RequestedFormat::new::<RgbFormat>(RequestedFormatType::Closest(CameraFormat::new(
             Resolution::new(IMAGE_WIDTH, IMAGE_HEIGHT * 2),
             FrameFormat::YUYV,
-            25,
+            FRAME_RATE,
         )));
     }
 
@@ -51,7 +51,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
         let thermal_data_buf = &frame_data[(IMAGE_WIDTH * IMAGE_HEIGHT * 2) as usize..];
 
         let u16_temperature_data = unsafe {
-            std::slice::from_raw_parts(thermal_data_buf.as_ptr() as *const u16, 256 * 192)
+            std::slice::from_raw_parts(thermal_data_buf.as_ptr() as *const u16, IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize)
         };
 
         Ok::<ThermalData, NokhwaError>(ThermalData::new(
@@ -66,6 +66,7 @@ impl CameraAdapter for InfirayP2ProAdapter {
 
     fn usb_vid_pid(&self) -> (u16, u16) {
         // Bus 001 Device 061: ID 0bda:5830 Realtek Semiconductor Corp. USB Camera
-        return (0x0bda, 0x5830);
+        //
+        return (0xcafe, 0x4020);
     }
 }

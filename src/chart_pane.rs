@@ -4,8 +4,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use eframe::egui;
-use egui_plot::{Line, Plot, PlotPoints};
+use eframe::{egui, epaint::Vec2};
+use egui_plot::{CoordinatesFormatter, Line, Plot, PlotPoints};
 
 use crate::{pane_dispatcher::Pane, AppGlobalState};
 
@@ -51,6 +51,7 @@ impl Pane for ChartPane {
         let mut global_state = global_state_clone.as_ref().borrow_mut();
 
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
+        let unit_suffix_clone = unit_suffix.clone(); // TODO: fixme
         egui::menu::bar(ui, |ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                 Self::POSSIBLE_DURATIONS.iter().for_each(|&duration| {
@@ -65,19 +66,31 @@ impl Pane for ChartPane {
                 });
             });
         });
-        Plot::new("Chart")
+
+        let plot_ret = Plot::new("Chart")
             .auto_bounds_x()
             .auto_bounds_y()
+            .set_margin_fraction(Vec2::new(0.0, 0.1))
+            .include_x(0.0)
+            .include_x(-self.display_duration.as_secs_f64())
+            .allow_scroll(false)
+            .allow_zoom(false)
+            .allow_drag(false)
+            .allow_boxed_zoom(false)
+            .allow_double_click_reset(false)
             .y_axis_label(format!(
                 "Temperature ({})",
                 global_state.preferred_temperature_unit().suffix()
             ))
-            .x_axis_label("Time")
-            // .include_y(0.0)
-            // .include_y(30.0)
-            // .y_axis_formatter(|factor, _max_chars, _range| format!("{:.0}%", factor))
             .y_axis_formatter(move |temp_val, _max_chars, _range| {
                 return format!("{:.0} {}", temp_val, unit_suffix);
+            })
+            .x_axis_formatter(move |time_val, _max_chars, _range| {
+                let dur = Duration::from_secs_f64(time_val.abs());
+                return ChartPane::duration_to_string(dur);
+            })
+            .label_formatter(move |lbl: &str, p| {
+                return format!("{:.0} {} {}", p.y, unit_suffix_clone, lbl);
             })
             .show(ui, |plot_ui| {
                 let gizmos = global_state
@@ -93,11 +106,11 @@ impl Pane for ChartPane {
                         .as_ref()
                         .map(|cr| cr.capture_time)
                         .unwrap_or(Instant::now());
-                    let minute_ago = now - Duration::from_secs(60);
+                    let start_of_range = now - self.display_duration;
                     let mut points = vec![];
                     global_state.history_data_collector.for_each_data_point(
                         gizmo.uuid,
-                        minute_ago,
+                        start_of_range,
                         now,
                         |data_point| {
                             points.push([
@@ -115,5 +128,15 @@ impl Pane for ChartPane {
                     plot_ui.line(line);
                 })
             });
+
+        if plot_ret.response.hovered() {
+            let scroll_delta_y = ui.input(|i: &egui::InputState| i.scroll_delta.y);
+            if scroll_delta_y != 0.0 {
+                let duration_secs = self.display_duration.as_secs() as f64;
+                let new_duration_secs: f64 = duration_secs - (scroll_delta_y as f64 / 3.0);
+                let new_duration_secs = new_duration_secs.max(5.0);
+                self.display_duration = Duration::from_secs_f64(new_duration_secs);
+            }
+        }
     }
 }

@@ -2706,7 +2706,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "uuid",
- "winit 0.29.6",
+ "winit 0.29.8",
 ]
 
 [[package]]
@@ -4643,9 +4643,9 @@ dependencies = [
 
 [[package]]
 name = "winit"
-version = "0.29.6"
+version = "0.29.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a5426b43d8782441f76a9b775686da171b9eedcfcee75a698fa5180c9a09d34"
+checksum = "0dc1a7ae1076890701c7dd71ea35b2aebaf9aeb7b8868ac2d33b1c7e8ef93c00"
 dependencies = [
  "ahash",
  "android-activity 0.5.0",

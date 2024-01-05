@@ -37,7 +37,7 @@ jobs:
         if: ${{ matrix.os == 'macos-latest' }}
         with:
           name: ${{ matrix.os }}-release
-          path: "target/release/bundle/osx/Open Desktop Thermal Viewer.app"
+          path: "target/release/bundle/osx"
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:

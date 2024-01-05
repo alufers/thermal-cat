@@ -17,6 +17,7 @@ use nokhwa::native_api_backend;
 use eframe::{
     egui::{self},
     epaint::Color32,
+    icon_data,
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
 use setup_pane::SetupPane;
@@ -51,8 +52,14 @@ mod user_preferences_window;
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([900.0, 600.0]),
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([900.0, 600.0])
+            .with_icon(
+                icon_data::from_png_bytes(&include_bytes!("../thermal-cat-logo-512px.png")[..])
+                    .unwrap(),
+            ),
         renderer: eframe::Renderer::Wgpu,
+
         ..Default::default()
     };
     eframe::run_native(

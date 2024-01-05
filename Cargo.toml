@@ -1,5 +1,6 @@
 [package]
 name = "open-desktop-thermal-viewer"
+description = "A thermal camera viewer."
 version = "0.1.0"
 edition = "2021"
 
@@ -37,3 +38,12 @@ features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
+
+[package.metadata.bundle]
+name = "Open Desktop Thermal Viewer"
+identifier = "dog.alu.opendesktopthermalviewer"
+icon = ["thermal-cat-logo-512px.png"]
+category = "Developer Tool"
+short_description = "A thermal camera viewer."
+description = "A thermal camera viewer."
+deb_depends = ["libgl1-mesa-glx", "libsdl2-2.0-0 (>= 2.0.5)"]

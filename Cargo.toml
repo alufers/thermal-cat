@@ -14,7 +14,7 @@ egui_extras = { version = "0.24.2", features = ["svg"] }
 egui_plot = "0.24.1"
 env_logger = "0.10.1"
 log = "0.4.20"
-nokhwa = { git = "https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-macos-usb-camera", features = [
+nokhwa = { path = "../nokhwa", features = [
     "input-v4l",
     "input-native",
     "output-threaded",

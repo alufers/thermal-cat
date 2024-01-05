@@ -2421,7 +2421,6 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 [[package]]
 name = "nokhwa"
 version = "0.10.3"
-source = "git+https://github.com/alufers/nokhwa.git?branch=fix/0.10.3-fix-macos-usb-camera#f8b0eadff44d0b21b19838e629165c6f1d299258"
 dependencies = [
  "flume 0.10.14",
  "image",
@@ -2436,7 +2435,6 @@ dependencies = [
 [[package]]
 name = "nokhwa-bindings-linux"
 version = "0.1.0"
-source = "git+https://github.com/alufers/nokhwa.git?branch=fix/0.10.3-fix-macos-usb-camera#f8b0eadff44d0b21b19838e629165c6f1d299258"
 dependencies = [
  "nokhwa-core",
  "v4l",
@@ -2446,7 +2444,6 @@ dependencies = [
 [[package]]
 name = "nokhwa-bindings-macos"
 version = "0.2.0"
-source = "git+https://github.com/alufers/nokhwa.git?branch=fix/0.10.3-fix-macos-usb-camera#f8b0eadff44d0b21b19838e629165c6f1d299258"
 dependencies = [
  "block",
  "cocoa-foundation",
@@ -2462,7 +2459,6 @@ dependencies = [
 [[package]]
 name = "nokhwa-bindings-windows"
 version = "0.4.0"
-source = "git+https://github.com/alufers/nokhwa.git?branch=fix/0.10.3-fix-macos-usb-camera#f8b0eadff44d0b21b19838e629165c6f1d299258"
 dependencies = [
  "nokhwa-core",
  "once_cell",
@@ -2472,7 +2468,6 @@ dependencies = [
 [[package]]
 name = "nokhwa-core"
 version = "0.1.0"
-source = "git+https://github.com/alufers/nokhwa.git?branch=fix/0.10.3-fix-macos-usb-camera#f8b0eadff44d0b21b19838e629165c6f1d299258"
 dependencies = [
  "bytes",
  "image",

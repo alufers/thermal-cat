@@ -54,6 +54,11 @@ impl CameraAdapter for InfirayP2ProAdapter {
             std::slice::from_raw_parts(thermal_data_buf.as_ptr() as *const u16, IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize)
         };
 
+        // print out the first 10 bytes of thermal_data_buf
+        for i in 0..10 {
+            print!("{:} ", thermal_data_buf[i]);
+        }
+        println!("");
         Ok::<ThermalData, NokhwaError>(ThermalData::new(
             IMAGE_WIDTH as usize,
             IMAGE_HEIGHT as usize,

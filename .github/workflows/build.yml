@@ -25,14 +25,17 @@ jobs:
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo build --verbose --release
       - if: ${{ matrix.os == 'macos-latest' }}
+        name: Build macOS bundle
         run: |
           cargo install cargo-bundle
           cargo bundle --release
+
+      # Upload artifacts
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           name: ${{ matrix.os }}-release
-          path: target/release/open-desktop-thermal-viewer.exe
+          path: target/release/thermal-cat.exe
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.os == 'macos-latest' }}
         with:
@@ -42,6 +45,6 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           name: ${{ matrix.os }}-release
-          path: target/release/open-desktop-thermal-viewer
+          path: target/release/thermal-cat
           
   

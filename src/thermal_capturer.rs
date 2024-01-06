@@ -5,6 +5,7 @@ use std::{
     thread,
 };
 
+use anyhow::{Error, anyhow};
 use eframe::epaint::ColorImage;
 use nokhwa::Camera;
 use uuid::Uuid;
@@ -48,17 +49,18 @@ struct ThermalCapturerCtx {
     camera: Camera,
     callback: ThermalCapturerCallback,
     cmd_receiver: mpsc::Receiver<ThermalCapturerCmd>,
-    result_sender: mpsc::Sender<Box<ThermalCapturerResult>>,
+    result_sender: mpsc::Sender<Result<Box<ThermalCapturerResult>, Error>>,
     adapter: Arc<dyn CameraAdapter>,
     settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
+    last_frame_time: std::time::Instant,
 }
 
 pub struct ThermalCapturer {
     ctx: Option<ThermalCapturerCtx>,
     cmd_sender: mpsc::Sender<ThermalCapturerCmd>,
 
-    pub result_receiver: mpsc::Receiver<Box<ThermalCapturerResult>>,
+    pub result_receiver: mpsc::Receiver<Result<Box<ThermalCapturerResult>, Error>>,
 }
 
 ///
@@ -82,6 +84,7 @@ impl ThermalCapturer {
                 result_sender,
                 settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
+                last_frame_time: std::time::Instant::now(),
             }),
             cmd_sender,
             result_receiver,
@@ -95,14 +98,14 @@ impl ThermalCapturer {
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
 
-            let mut last_frame_time;
-            loop {
-                last_frame_time = std::time::Instant::now();
+            fn produce_result(
+                ctx: &mut ThermalCapturerCtx,
+            ) -> Result<Box<ThermalCapturerResult>, Error> {
+                ctx.last_frame_time = std::time::Instant::now();
 
                 let thermal_data = ctx
                     .adapter
-                    .capture_thermal_data(&mut ctx.camera)
-                    .unwrap()
+                    .capture_thermal_data(&mut ctx.camera)?
                     .rotated(ctx.settings.rotation);
                 let capture_time = std::time::Instant::now();
 
@@ -127,7 +130,7 @@ impl ThermalCapturer {
                 ctx.settings
                     .gizmo
                     .children_mut()
-                    .unwrap()
+                    .ok_or(anyhow!("Root gizmo has no children"))?
                     .iter()
                     .for_each(|g| match g.kind {
                         GizmoKind::MaxTemp => {
@@ -160,12 +163,11 @@ impl ThermalCapturer {
                                 },
                             );
                         }
-                        _ => panic!("Unimplemented gizmo kind"),
-                    });
+                        _ => panic!("Unimplemented gizmo kind"),                    });
 
-                let result = Box::new(ThermalCapturerResult {
+                Ok(Box::new(ThermalCapturerResult {
                     image,
-                    real_fps: 1.0 / last_frame_time.elapsed().as_secs_f32(),
+                    real_fps: 1.0 / ctx.last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
                     image_range: mapping_range,
                     histogram: ThermalDataHistogram::from_thermal_data(
@@ -175,7 +177,10 @@ impl ThermalCapturer {
                     ),
                     gizmo_results,
                     capture_time,
-                });
+                }))
+            }
+            loop {
+                let result = produce_result(&mut ctx);
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();
                 match ctx.cmd_receiver.try_recv() {

@@ -3,6 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use anyhow::Error;
 use chart_pane::ChartPane;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
@@ -204,25 +205,34 @@ impl eframe::App for ThermalViewerApp {
         {
             let mut borrowed_global_state = self.global_state.borrow_mut();
 
+            // drain thermal capturer results
             while {
-                let mut result = Option::<Box<ThermalCapturerResult>>::None;
-
+               
+                let mut had_result = false; 
                 if let Some(capturer) = borrowed_global_state.thermal_capturer_inst.as_mut() {
                     // Handle thermal capturer commands
-                    if let Ok(cmd) = capturer.result_receiver.try_recv() {
-                        result = Some(cmd);
+                    match capturer.result_receiver.try_recv() {
+                        Ok(r) => match r {
+                            Ok(result) => {
+                                borrowed_global_state
+                                    .history_data_collector
+                                    .add_from_gizmo_results(
+                                        result.capture_time,
+                                        &result.gizmo_results,
+                                    )
+                                    .unwrap();
+                                borrowed_global_state.last_thermal_capturer_result = Some(result);
+                                had_result = true;
+                            }
+                            Err(e) => {
+                                error!("Thermal capturer error: {}", e);
+                                borrowed_global_state.thermal_capturer_inst = None;
+                            }
+                        },
+                        Err(e) => {}
                     }
                 }
-                let had_result = result.is_some();
-
-                if let Some(result) = result {
-                    borrowed_global_state
-                        .history_data_collector
-                        .add_from_gizmo_results(result.capture_time, &result.gizmo_results)
-                        .unwrap();
-                    borrowed_global_state.last_thermal_capturer_result = Some(result);
-                }
-
+               
                 had_result
             } {}
         }

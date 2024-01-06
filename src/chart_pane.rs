@@ -5,7 +5,7 @@ use std::{
 };
 
 use eframe::{egui, epaint::Vec2};
-use egui_plot::{CoordinatesFormatter, Line, Plot, PlotPoints};
+use egui_plot::{Line, Plot, PlotPoints};
 
 use crate::{pane_dispatcher::Pane, AppGlobalState};
 

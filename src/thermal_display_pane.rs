@@ -211,10 +211,22 @@ impl Pane for ThermalDisplayPane {
 
                             if plot_ui.response().hovered() {
                                 let zoom_delta = plot_ui.ctx().input(|inp| {
-                                    inp.multi_touch()
-                                        .map_or((inp.scroll_delta.y / 200.0).exp(), |touch| {
-                                            touch.zoom_delta
+                                    // try to get zoom delta from 3 different sources
+                                    let zoom_delta_from_multitouch =
+                                        inp.multi_touch().map(|touch| touch.zoom_delta);
+                                    let zoom_delta_from_scroll = (inp.scroll_delta.y / 200.0).exp();
+                                    
+                                    let zoom_delta_from_zoom = inp
+                                        .raw.events
+                                        .iter()
+                                        .filter_map(|e| match e {
+                                            egui::Event::Zoom(zoom) => Some(*zoom),
+                                            _ => None,
                                         })
+                                        .reduce(|a, b| a + b);
+                                    None.or(zoom_delta_from_multitouch)
+                                        .or(zoom_delta_from_zoom)
+                                        .unwrap_or(zoom_delta_from_scroll)
                                 });
 
                                 if zoom_delta != 0.0 {

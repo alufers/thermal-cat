@@ -61,7 +61,9 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             product_id,
         };
         let _ = self.evt_sender.send(evt);
-        if let Some(cb) = self.callback.lock().as_ref() { cb(evt) }
+        if let Some(cb) = self.callback.lock().as_ref() {
+            cb(evt)
+        }
     }
 
     fn device_left(&mut self, device: Device<T>) {
@@ -74,7 +76,9 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             product_id,
         };
         let _ = self.evt_sender.send(evt);
-        if let Some(cb) = self.callback.lock().as_ref() { cb(evt) }
+        if let Some(cb) = self.callback.lock().as_ref() {
+            cb(evt)
+        }
     }
 }
 

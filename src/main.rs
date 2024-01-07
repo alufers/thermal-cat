@@ -3,7 +3,6 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-
 use chart_pane::ChartPane;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
@@ -207,8 +206,7 @@ impl eframe::App for ThermalViewerApp {
 
             // drain thermal capturer results
             while {
-               
-                let mut had_result = false; 
+                let mut had_result = false;
                 if let Some(capturer) = borrowed_global_state.thermal_capturer_inst.as_mut() {
                     // Handle thermal capturer commands
                     match capturer.result_receiver.try_recv() {
@@ -232,15 +230,13 @@ impl eframe::App for ThermalViewerApp {
                         Err(_) => {}
                     }
                 }
-               
+
                 had_result
             } {}
         }
 
-        self.user_preferences_window.draw(
-            ctx,
-            self.global_state.borrow_mut().prefs.as_mut().unwrap(),
-        );
+        self.user_preferences_window
+            .draw(ctx, self.global_state.borrow_mut().prefs.as_mut().unwrap());
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {

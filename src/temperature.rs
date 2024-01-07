@@ -172,16 +172,13 @@ impl Debug for TempRange {
     }
 }
 
-#[derive(EnumIter, Display, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(EnumIter, Display, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TemperatureUnit {
     #[default]
     Kelvin,
     Celsius,
     Fahrenheit,
 }
-
-
 
 impl TemperatureUnit {
     pub fn suffix(&self) -> String {

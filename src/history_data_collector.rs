@@ -34,10 +34,7 @@ impl HistoryDataCollector {
                 time,
             };
 
-            let data_points = self
-                .stored_data
-                .entry(*gizmo_uuid)
-                .or_default();
+            let data_points = self.stored_data.entry(*gizmo_uuid).or_default();
 
             data_points.push(data_point);
         }

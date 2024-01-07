@@ -92,7 +92,8 @@ pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, anyhow::Error> {
                         } else {
                             false
                         }
-                    }).cloned();
+                    })
+                    .cloned();
                 EnumeratedCamera {
                     info,
                     usb_vid_pid,

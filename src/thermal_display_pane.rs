@@ -83,7 +83,6 @@ impl Pane for ThermalDisplayPane {
                         },
                     ));
                     self.camera_image_size = Some((res.image.width(), res.image.height()));
-                    
                 });
 
             let gizmo_results = global_state
@@ -215,9 +214,10 @@ impl Pane for ThermalDisplayPane {
                                     let zoom_delta_from_multitouch =
                                         inp.multi_touch().map(|touch| touch.zoom_delta);
                                     let zoom_delta_from_scroll = (inp.scroll_delta.y / 200.0).exp();
-                                    
+
                                     let zoom_delta_from_zoom = inp
-                                        .raw.events
+                                        .raw
+                                        .events
                                         .iter()
                                         .filter_map(|e| match e {
                                             egui::Event::Zoom(zoom) => Some(*zoom),
@@ -254,8 +254,6 @@ impl Pane for ThermalDisplayPane {
                                     );
                             }
                         });
-
-                    
                 });
             });
         });

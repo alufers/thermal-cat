@@ -22,14 +22,11 @@ pub struct ThermalData {
     pub data: Vec<Temp>,
 }
 
-#[derive(Clone, Copy, Debug)]
-#[derive(Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct ThermalDataPos {
     pub x: usize,
     pub y: usize,
 }
-
-
 
 impl ThermalDataPos {
     pub fn new(x: usize, y: usize) -> Self {

@@ -4,7 +4,7 @@ use std::{
     thread,
 };
 
-use anyhow::{Error, anyhow};
+use anyhow::{anyhow, Error};
 use eframe::epaint::ColorImage;
 use nokhwa::Camera;
 use uuid::Uuid;
@@ -162,7 +162,8 @@ impl ThermalCapturer {
                                 },
                             );
                         }
-                        _ => panic!("Unimplemented gizmo kind"),                    });
+                        _ => panic!("Unimplemented gizmo kind"),
+                    });
 
                 Ok(Box::new(ThermalCapturerResult {
                     image,

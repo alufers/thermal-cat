@@ -92,7 +92,6 @@ impl SetupPane {
                 capturer
             });
             self.open_camera_error = None;
-            
         })
         .inspect_err(|err| {
             self.open_camera_error = Some(format!("Failed to open camera: {}", err));
@@ -160,7 +159,8 @@ impl Pane for SetupPane {
             Ok(ref cameras) => {
                 egui::ComboBox::from_label("")
                     .selected_text(
-                        self.selected_camera_info().map(|c| c.rich_text_name(true))
+                        self.selected_camera_info()
+                            .map(|c| c.rich_text_name(true))
                             .unwrap_or(LayoutJob::single_section(
                                 "No Camera Selected".to_string(),
                                 Default::default(),

@@ -229,7 +229,7 @@ impl eframe::App for ThermalViewerApp {
                                 borrowed_global_state.thermal_capturer_inst = None;
                             }
                         },
-                        Err(e) => {}
+                        Err(_) => {}
                     }
                 }
                

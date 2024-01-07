@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use anyhow::Error;
+
 use chart_pane::ChartPane;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};

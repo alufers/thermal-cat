@@ -119,20 +119,22 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
 
     let descr = info.description().to_string();
 
+
+    // TODO: remove unwrap
     DEV_VIDEO_REGEX
         .captures(&descr)
         .and_then(|captures| {
             let dev_num = captures.get(1).unwrap().as_str().parse::<u16>().unwrap();
             let uevent_path = format!("/sys/class/video4linux/video{}/device/uevent", dev_num);
-            return fs::read_to_string(uevent_path).ok();
+            fs::read_to_string(uevent_path).ok()
         })
         .and_then(|uevent_contents| {
             UEVENT_PRODUCT_REGEX
                 .captures(&uevent_contents)
-                .and_then(|captures| {
+                .map(|captures| {
                     let vid = u16::from_str_radix(captures.get(1).unwrap().as_str(), 16).unwrap();
                     let pid = u16::from_str_radix(captures.get(2).unwrap().as_str(), 16).unwrap();
-                    return Some((vid, pid));
+                    (vid, pid)
                 })
         })
 }

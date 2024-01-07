@@ -63,11 +63,11 @@ impl AutoDisplayRangeController {
         );
 
         // check clipping
-        if !self.current.contains_range(captured_range) {
-            self.clipping_time += delta;
-        } else if captured_range.max < shrinking_range.max
+        if !self.current.contains_range(captured_range)
+            || captured_range.max < shrinking_range.max
             || captured_range.min > shrinking_range.min
         {
+            self.clipping_time += delta;
             // if we are in the shrinking range, reset the clipping time
             self.clipping_time += delta;
         } else {

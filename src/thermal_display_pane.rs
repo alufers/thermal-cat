@@ -109,7 +109,7 @@ impl Pane for ThermalDisplayPane {
             }
             ui.vertical(|ui| {
                 self.build_toolbar_ui(ui);
-                self.camera_texture.as_ref().map(|texture| {
+                if let Some(texture) = self.camera_texture.as_ref() {
                     let img_size = self.camera_image_size.unwrap();
 
                     Plot::new("thermal_display_plot")
@@ -251,7 +251,7 @@ impl Pane for ThermalDisplayPane {
                                     );
                             }
                         });
-                });
+                }
             });
         });
     }

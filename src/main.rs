@@ -209,8 +209,8 @@ impl eframe::App for ThermalViewerApp {
                 let mut had_result = false;
                 if let Some(capturer) = borrowed_global_state.thermal_capturer_inst.as_mut() {
                     // Handle thermal capturer commands
-                    match capturer.result_receiver.try_recv() {
-                        Ok(r) => match r {
+                    if let Ok(r) = capturer.result_receiver.try_recv() {
+                        match r {
                             Ok(result) => {
                                 borrowed_global_state
                                     .history_data_collector
@@ -226,8 +226,7 @@ impl eframe::App for ThermalViewerApp {
                                 error!("Thermal capturer error: {}", e);
                                 borrowed_global_state.thermal_capturer_inst = None;
                             }
-                        },
-                        Err(_) => {}
+                        }
                     }
                 }
 

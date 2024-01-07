@@ -183,8 +183,8 @@ impl ThermalCapturer {
                 let result = produce_result(&mut ctx);
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();
-                match ctx.cmd_receiver.try_recv() {
-                    Ok(cmd) => match cmd {
+                if let Ok(cmd) = ctx.cmd_receiver.try_recv() {
+                    match cmd {
                         ThermalCapturerCmd::Stop => {
                             ctx.camera.stop_stream().unwrap();
                             break;
@@ -192,8 +192,7 @@ impl ThermalCapturer {
                         ThermalCapturerCmd::SetSettings(range_settings) => {
                             ctx.settings = range_settings;
                         }
-                    },
-                    Err(_) => {}
+                    }
                 }
             }
         });

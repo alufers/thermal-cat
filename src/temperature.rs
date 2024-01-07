@@ -39,7 +39,7 @@ impl Temp {
             },
         }
     }
-    pub fn to_unit(&self, unit: TemperatureUnit) -> f32 {
+    pub fn to_unit(self, unit: TemperatureUnit) -> f32 {
         match unit {
             TemperatureUnit::Kelvin => self.value_kelvin,
             TemperatureUnit::Celsius => self.value_kelvin - 273.15,

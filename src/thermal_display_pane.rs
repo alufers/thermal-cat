@@ -70,20 +70,17 @@ impl Pane for ThermalDisplayPane {
         let mut global_state = global_state_clone.as_ref().borrow_mut();
 
         ui.centered_and_justified(|ui| {
-            global_state
-                .last_thermal_capturer_result
-                .as_ref()
-                .map(|res| {
-                    self.camera_texture = Some(ui.ctx().load_texture(
-                        "cam_ctx",
-                        res.image.clone(),
-                        TextureOptions {
-                            magnification: egui::TextureFilter::Nearest,
-                            ..Default::default()
-                        },
-                    ));
-                    self.camera_image_size = Some((res.image.width(), res.image.height()));
-                });
+            if let Some(res) = global_state.last_thermal_capturer_result.as_ref() {
+                self.camera_texture = Some(ui.ctx().load_texture(
+                    "cam_ctx",
+                    res.image.clone(),
+                    TextureOptions {
+                        magnification: egui::TextureFilter::Nearest,
+                        ..Default::default()
+                    },
+                ));
+                self.camera_image_size = Some((res.image.width(), res.image.height()));
+            }
 
             let gizmo_results = global_state
                 .last_thermal_capturer_result

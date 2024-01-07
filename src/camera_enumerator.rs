@@ -119,7 +119,6 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
 
     let descr = info.description().to_string();
 
-
     // TODO: remove unwrap
     DEV_VIDEO_REGEX
         .captures(&descr)

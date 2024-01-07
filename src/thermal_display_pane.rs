@@ -4,11 +4,12 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, SizeHint, Slider, TextureOptions, Ui, Widget,
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
     },
-    epaint::{TextureHandle, Vec2},
+    emath::Align2,
+    epaint::{Color32, TextureHandle, Vec2},
 };
-use egui_plot::{Plot, PlotBounds, PlotImage, PlotPoint};
+use egui_plot::{Plot, PlotBounds, PlotImage, PlotPoint, Text};
 
 use crate::{
     gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos, AppGlobalState,
@@ -144,6 +145,7 @@ impl Pane for ThermalDisplayPane {
                                 Vec2::new(img_size.0 as f32, img_size.1 as f32),
                             ));
 
+                            let temp_unit = global_state.preferred_temperature_unit();
                             global_state
                                 .thermal_capturer_settings
                                 .gizmo
@@ -178,6 +180,24 @@ impl Pane for ThermalDisplayPane {
                                                     Vec2::new(5.0, 5.0),
                                                 )
                                                 .tint(c.color),
+                                            );
+                                        }
+                                        if c.show_temperature_label {
+                                            plot_ui.text(
+                                                Text::new(
+                                                    PlotPoint::new(x + 4.0, y),
+                                                    RichText::new(format!(
+                                                        "{:.1} {}",
+                                                        result.temperature.to_unit(temp_unit),
+                                                        temp_unit.suffix()
+                                                    ))
+                                                    .size(16.0)
+                                                    .background_color(
+                                                        Color32::BLACK.gamma_multiply(0.5),
+                                                    )
+                                                    .color(Color32::WHITE),
+                                                )
+                                                .anchor(Align2::LEFT_CENTER),
                                             );
                                         }
                                     }

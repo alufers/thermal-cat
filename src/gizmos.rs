@@ -17,6 +17,7 @@ pub struct Gizmo {
     pub kind: GizmoKind,
     pub name: String,
     pub color: Color32,
+    pub show_temperature_label: bool,
 }
 
 impl Gizmo {
@@ -26,6 +27,7 @@ impl Gizmo {
             kind,
             name,
             color,
+            show_temperature_label: true,
         }
     }
     pub fn new_root(children: Vec<Gizmo>) -> Self {
@@ -34,6 +36,7 @@ impl Gizmo {
             kind: GizmoKind::Root { children },
             name: "Root".to_string(),
             color: Color32::WHITE,
+            show_temperature_label: true,
         }
     }
 

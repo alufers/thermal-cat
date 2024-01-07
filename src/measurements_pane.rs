@@ -32,7 +32,7 @@ impl Pane for MeasurementsPane {
 
         Grid::new("measurements_pane_grid")
             .striped(true)
-            .num_columns(4)
+            .num_columns(5)
             .min_col_width(40.0)
             .show(ui, |ui| {
                 ui.label("");
@@ -120,6 +120,24 @@ impl Pane for MeasurementsPane {
                                     gizmo_uuid_to_remove = Some(gizmo.uuid);
                                 }
                             }
+                        }
+
+                        if ui
+                            .add(
+                                ImageButton::new(
+                                    Image::new(egui::include_image!("./icons/type.svg")).tint(
+                                        if gizmo.show_temperature_label {
+                                            ui.style().visuals.widgets.active.fg_stroke.color
+                                        } else {
+                                            ui.style().visuals.widgets.inactive.fg_stroke.color
+                                        },
+                                    ),
+                                )
+                                .frame(false),
+                            )
+                            .clicked()
+                        {
+                            gizmo.show_temperature_label = !gizmo.show_temperature_label;
                         }
 
                         ui.end_row();

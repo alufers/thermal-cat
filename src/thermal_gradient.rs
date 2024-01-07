@@ -49,7 +49,7 @@ impl ThermalGradientPoint {
     pub fn from_rgbv(r: u8, g: u8, b: u8, pos: f32) -> Self {
         Self {
             color: Color32::from_rgb(r, g, b),
-            pos: pos,
+            pos,
         }
     }
 }
@@ -76,7 +76,7 @@ impl ThermalGradient {
     // The position is normalized to the range [0, 1].
     //
     pub fn get_color(&self, pos: f32) -> Color32 {
-        if self.points.len() == 0 {
+        if self.points.is_empty() {
             return Color32::from_rgb(0, 0, 0);
         }
         if self.points.len() == 1 {
@@ -103,7 +103,7 @@ impl ThermalGradient {
             }
             i += 1;
         }
-        return Color32::from_rgb(0, 0, 0);
+        Color32::from_rgb(0, 0, 0)
     }
 
     pub fn create_demo_image(&self, width: usize, height: usize) -> ColorImage {

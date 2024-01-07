@@ -38,7 +38,7 @@ impl fmt::Display for HotplugEvent {
     }
 }
 
-type HotplugtEventCallback = dyn Fn(HotplugEvent) -> () + Send;
+type HotplugtEventCallback = dyn Fn(HotplugEvent) + Send;
 
 pub struct HotplugDetector {
     pub receiver: std::sync::mpsc::Receiver<HotplugEvent>,
@@ -61,7 +61,7 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             product_id,
         };
         let _ = self.evt_sender.send(evt);
-        self.callback.lock().as_ref().map(|cb| cb(evt));
+        if let Some(cb) = self.callback.lock().as_ref() { cb(evt) }
     }
 
     fn device_left(&mut self, device: Device<T>) {
@@ -74,11 +74,11 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             product_id,
         };
         let _ = self.evt_sender.send(evt);
-        self.callback.lock().as_ref().map(|cb| cb(evt));
+        if let Some(cb) = self.callback.lock().as_ref() { cb(evt) }
     }
 }
 
-pub fn run_hotplug_detector<F: Fn(HotplugEvent) -> () + Send + 'static>(
+pub fn run_hotplug_detector<F: Fn(HotplugEvent) + Send + 'static>(
     callback: F,
 ) -> Result<HotplugDetector, anyhow::Error> {
     if rusb::has_hotplug() {

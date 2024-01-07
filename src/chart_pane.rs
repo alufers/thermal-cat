@@ -18,7 +18,7 @@ impl ChartPane {
     const POSSIBLE_DURATIONS: [Duration; 3] = [
         Duration::from_secs(60 * 15),
         Duration::from_secs(60 * 5),
-        Duration::from_secs(60 * 1),
+        Duration::from_secs(60),
     ];
     pub fn new(global_state: Rc<RefCell<AppGlobalState>>) -> ChartPane {
         ChartPane {
@@ -83,14 +83,14 @@ impl Pane for ChartPane {
                 global_state.preferred_temperature_unit().suffix()
             ))
             .y_axis_formatter(move |temp_val, _max_chars, _range| {
-                return format!("{:.0} {}", temp_val, unit_suffix);
+                format!("{:.0} {}", temp_val, unit_suffix)
             })
             .x_axis_formatter(move |time_val, _max_chars, _range| {
                 let dur = Duration::from_secs_f64(time_val.abs());
-                return ChartPane::duration_to_string(dur);
+                ChartPane::duration_to_string(dur)
             })
             .label_formatter(move |lbl: &str, p| {
-                return format!("{:.0} {} {}", p.y, unit_suffix_clone, lbl);
+                format!("{:.0} {} {}", p.y, unit_suffix_clone, lbl)
             })
             .show(ui, |plot_ui| {
                 let gizmos = global_state

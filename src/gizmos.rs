@@ -31,7 +31,7 @@ impl Gizmo {
     pub fn new_root(children: Vec<Gizmo>) -> Self {
         Self {
             uuid: Uuid::new_v4(),
-            kind: GizmoKind::Root { children: children },
+            kind: GizmoKind::Root { children },
             name: "Root".to_string(),
             color: Color32::WHITE,
         }

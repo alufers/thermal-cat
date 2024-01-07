@@ -17,7 +17,7 @@ impl egui_dock::TabViewer for PaneDispatcher {
     type Tab = Box<dyn Pane>;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        tab.title().into()
+        tab.title()
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {

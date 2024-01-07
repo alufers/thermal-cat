@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    mem,
     sync::{mpsc, Arc},
     thread,
 };
@@ -94,7 +93,7 @@ impl ThermalCapturer {
     //
     pub fn start(&mut self) {
         // move the camera out of self so we can use it into the thread
-        let mut ctx = mem::replace(&mut self.ctx, None).unwrap();
+        let mut ctx = self.ctx.take().unwrap();
         thread::spawn(move || {
             ctx.camera.open_stream().unwrap();
 
@@ -139,7 +138,7 @@ impl ThermalCapturer {
                                 GizmoResult {
                                     uuid: g.uuid,
                                     temperature: captured_range.max,
-                                    pos: maxtemp_pos.clone(),
+                                    pos: maxtemp_pos,
                                 },
                             );
                         }
@@ -149,7 +148,7 @@ impl ThermalCapturer {
                                 GizmoResult {
                                     uuid: g.uuid,
                                     temperature: captured_range.min,
-                                    pos: mintemp_pos.clone(),
+                                    pos: mintemp_pos,
                                 },
                             );
                         }

@@ -76,7 +76,7 @@ impl Pane for HistogramPane {
             .include_y(30.0)
             .y_axis_formatter(|factor, _max_chars, _range| format!("{:.0}%", factor))
             .x_axis_formatter(move |temp_val, _max_chars, _range| {
-                return format!("{:.0} {}", temp_val, unit_suffix);
+                format!("{:.0} {}", temp_val, unit_suffix)
             })
             .show(ui, |plot_ui| {
                 plot_ui.bar_chart(chart);

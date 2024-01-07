@@ -30,15 +30,15 @@ impl CameraAdapter for InfirayP2ProAdapter {
     }
 
     fn requested_format(&self) -> nokhwa::utils::RequestedFormat<'static> {
-        return RequestedFormat::new::<RgbFormat>(RequestedFormatType::Closest(CameraFormat::new(
+        RequestedFormat::new::<RgbFormat>(RequestedFormatType::Closest(CameraFormat::new(
             Resolution::new(IMAGE_WIDTH, IMAGE_HEIGHT * 2),
             FrameFormat::YUYV,
             25,
-        )));
+        )))
     }
 
     fn temperature_range(&self) -> (f32, f32) {
-        return (253.15, 873.15);
+        (253.15, 873.15)
     }
 
     ///
@@ -66,6 +66,6 @@ impl CameraAdapter for InfirayP2ProAdapter {
 
     fn usb_vid_pid(&self) -> (u16, u16) {
         // Bus 001 Device 061: ID 0bda:5830 Realtek Semiconductor Corp. USB Camera
-        return (0x0bda, 0x5830);
+        (0x0bda, 0x5830)
     }
 }

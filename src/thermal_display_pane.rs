@@ -73,7 +73,7 @@ impl Pane for ThermalDisplayPane {
             global_state
                 .last_thermal_capturer_result
                 .as_ref()
-                .and_then(|res| {
+                .map(|res| {
                     self.camera_texture = Some(ui.ctx().load_texture(
                         "cam_ctx",
                         res.image.clone(),
@@ -83,7 +83,7 @@ impl Pane for ThermalDisplayPane {
                         },
                     ));
                     self.camera_image_size = Some((res.image.width(), res.image.height()));
-                    Some(())
+                    
                 });
 
             let gizmo_results = global_state
@@ -113,7 +113,7 @@ impl Pane for ThermalDisplayPane {
             }
             ui.vertical(|ui| {
                 self.build_toolbar_ui(ui);
-                self.camera_texture.as_ref().and_then(|texture| {
+                self.camera_texture.as_ref().map(|texture| {
                     let img_size = self.camera_image_size.unwrap();
 
                     Plot::new("thermal_display_plot")
@@ -255,7 +255,7 @@ impl Pane for ThermalDisplayPane {
                             }
                         });
 
-                    Some(())
+                    
                 });
             });
         });

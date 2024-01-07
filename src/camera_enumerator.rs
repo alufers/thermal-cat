@@ -68,7 +68,7 @@ impl EnumeratedCamera {
             }
         }
 
-        return job;
+        job
     }
 }
 
@@ -88,12 +88,11 @@ pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, anyhow::Error> {
                     .iter()
                     .find(|adapter| {
                         if let Some((vid, pid)) = usb_vid_pid {
-                            return adapter.usb_vid_pid() == (vid, pid);
+                            adapter.usb_vid_pid() == (vid, pid)
                         } else {
-                            return false;
+                            false
                         }
-                    })
-                    .map(|adapter| adapter.clone());
+                    }).cloned();
                 EnumeratedCamera {
                     info,
                     usb_vid_pid,
@@ -158,7 +157,7 @@ fn get_vid_pid_for_camera(info: &CameraInfo) -> Option<(u16, u16)> {
     let pid = u16::from_str_radix(&unique_id[unique_id.len() - 4..], 16);
     let vid = u16::from_str_radix(&unique_id[unique_id.len() - 8..unique_id.len() - 4], 16);
 
-    vid.ok().zip(pid.ok()).map(|(vid, pid)| (vid, pid))
+    vid.ok().zip(pid.ok())
 }
 
 #[cfg(target_os = "windows")]

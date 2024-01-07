@@ -76,7 +76,7 @@ impl Pane for MeasurementsPane {
                         ui.label(
                             gizmo_results
                                 .as_ref()
-                                .and_then(|gr| gr.get(&gizmo.uuid).clone())
+                                .and_then(|gr| gr.get(&gizmo.uuid))
                                 .map(|r| {
                                     format!(
                                         "{:.1} {}",

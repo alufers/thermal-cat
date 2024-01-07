@@ -75,7 +75,7 @@ impl AutoDisplayRangeController {
         }
 
         if self.clipping_time > self.clipping_time_threshold {
-            if !self.anim_target_range.is_some() {
+            if self.anim_target_range.is_none() {
                 let target = TempRange::new(
                     captured_range.min - self.new_range_min_headroom,
                     captured_range.max + self.new_range_max_headroom,

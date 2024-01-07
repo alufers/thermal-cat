@@ -36,8 +36,8 @@ impl HistoryDataCollector {
 
             let data_points = self
                 .stored_data
-                .entry(gizmo_uuid.clone())
-                .or_insert_with(Vec::new);
+                .entry(*gizmo_uuid)
+                .or_default();
 
             data_points.push(data_point);
         }

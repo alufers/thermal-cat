@@ -238,8 +238,8 @@ impl eframe::App for ThermalViewerApp {
         }
 
         self.user_preferences_window.draw(
-            &ctx,
-            &mut self.global_state.borrow_mut().prefs.as_mut().unwrap(),
+            ctx,
+            self.global_state.borrow_mut().prefs.as_mut().unwrap(),
         );
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -247,7 +247,7 @@ impl eframe::App for ThermalViewerApp {
                 ui.menu_button("File", |ui| {
                     if ui.button("Preferences").clicked() {
                         self.user_preferences_window
-                            .show(&mut self.global_state.borrow_mut().prefs.as_mut().unwrap());
+                            .show(self.global_state.borrow_mut().prefs.as_mut().unwrap());
                     }
                     ui.separator();
                     if ui.button("Quit").clicked() {

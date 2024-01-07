@@ -76,7 +76,7 @@ impl SetupPane {
             self.selected_camera_index.clone(),
             adapter.requested_format(),
         )
-        .and_then(|cam| {
+        .map(|cam| {
             // Create thermal capturer
 
             global_state.thermal_capturer_inst = Some(ThermalCapturer::new(
@@ -87,12 +87,12 @@ impl SetupPane {
                     cloned_ctx.request_repaint(); // repaint so that the result can be read out
                 }),
             ))
-            .and_then(|mut capturer| {
+            .map(|mut capturer| {
                 capturer.start();
-                Some(capturer)
+                capturer
             });
             self.open_camera_error = None;
-            Ok(())
+            
         })
         .inspect_err(|err| {
             self.open_camera_error = Some(format!("Failed to open camera: {}", err));
@@ -160,13 +160,11 @@ impl Pane for SetupPane {
             Ok(ref cameras) => {
                 egui::ComboBox::from_label("")
                     .selected_text(
-                        self.selected_camera_info()
-                            .and_then(|c| Some(c.rich_text_name(true)))
-                            .or(Some(LayoutJob::single_section(
+                        self.selected_camera_info().map(|c| c.rich_text_name(true))
+                            .unwrap_or(LayoutJob::single_section(
                                 "No Camera Selected".to_string(),
                                 Default::default(),
-                            )))
-                            .unwrap(),
+                            )),
                     )
                     .width(200.0)
                     .show_ui(ui, |ui| {
@@ -221,11 +219,9 @@ impl Pane for SetupPane {
                 let _ = self.open_selected_camera(ui.ctx(), &mut global_state);
                 global_state.should_try_open_camera_on_next_hotplug = true;
             }
-        } else {
-            if ui.button("Close Camera").clicked() {
-                global_state.thermal_capturer_inst = None;
-                global_state.should_try_open_camera_on_next_hotplug = false;
-            }
+        } else if ui.button("Close Camera").clicked() {
+            global_state.thermal_capturer_inst = None;
+            global_state.should_try_open_camera_on_next_hotplug = false;
         }
 
         if let Some(error) = &self.open_camera_error {

@@ -1,2 +1,5 @@
 /target
 .gdb_history
+.flatpak-builder
+repo
+cargo-sources.json

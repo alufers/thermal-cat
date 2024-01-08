@@ -1,0 +1,31 @@
+id: dog.alu.thermal-cat
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-nightly
+  - org.freedesktop.Sdk.Extension.llvm17
+build-options:
+  append-path: "/usr/lib/sdk/rust-nightly/bin:/usr/lib/sdk/llvm17/bin"
+  prepend-ld-library-path: "/usr/lib/sdk/llvm17/lib"
+finish-args:
+  - "--socket=fallback-x11"
+  - "--share=ipc"
+  - "--socket=wayland"
+  - "--device=all"
+modules:
+  - name: thermal-cat
+    buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: "/run/build/thermal-cat/cargo"
+    build-commands:
+      - ls /usr/lib/sdk/rust-nightly/bin
+      - cargo --offline fetch --manifest-path Cargo.toml --verbose
+      - cargo --offline build --release --verbose
+      - install -Dm755 ./target/release/thermal-cat -t /app/bin/
+    sources:
+      - type: dir
+        path: .
+      - "cargo-sources.json"
+

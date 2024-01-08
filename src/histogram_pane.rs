@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use eframe::{egui, epaint::Color32};
+use eframe::{egui, epaint::Color32, emath::Vec2b};
 use egui_plot::{Bar, BarChart, Plot, VLine};
 
 use crate::{pane_dispatcher::Pane, temperature::TemperatureUnit, AppGlobalState};
@@ -65,8 +65,7 @@ impl Pane for HistogramPane {
         );
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
         Plot::new("Temperature distribution plot")
-            .auto_bounds_x()
-            .auto_bounds_y()
+            .auto_bounds(Vec2b::TRUE)
             .y_axis_label("% of image")
             .x_axis_label(format!(
                 "Temperature ({})",

@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use eframe::{egui, epaint::Vec2};
+use eframe::{egui, epaint::Vec2, emath::Vec2b};
 use egui_plot::{Line, Plot, PlotPoints};
 
 use crate::{pane_dispatcher::Pane, AppGlobalState};
@@ -68,8 +68,7 @@ impl Pane for ChartPane {
         });
 
         let plot_ret = Plot::new("Chart")
-            .auto_bounds_x()
-            .auto_bounds_y()
+            .auto_bounds(Vec2b::TRUE)
             .set_margin_fraction(Vec2::new(0.0, 0.1))
             .include_x(0.0)
             .include_x(-self.display_duration.as_secs_f64())

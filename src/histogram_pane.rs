@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use eframe::{egui, epaint::Color32, emath::Vec2b};
+use eframe::{egui, emath::Vec2b, epaint::Color32};
 use egui_plot::{Bar, BarChart, Plot, VLine};
 
 use crate::{pane_dispatcher::Pane, temperature::TemperatureUnit, AppGlobalState};
@@ -35,7 +35,7 @@ impl Pane for HistogramPane {
             .last_thermal_capturer_result
             .as_ref()
             .map(|r| r.image_range)
-            .unwrap_or_default();
+            .unwrap_or_else(|| global_state.thermal_capturer_settings.manual_range);
 
         let mut bucket_width = 1.0;
         if temperature_points.len() > 1 {
@@ -64,6 +64,7 @@ impl Pane for HistogramPane {
                 .collect(),
         );
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
+
         Plot::new("Temperature distribution plot")
             .auto_bounds(Vec2b::TRUE)
             .y_axis_label("% of image")
@@ -79,24 +80,26 @@ impl Pane for HistogramPane {
             })
             .show(ui, |plot_ui| {
                 plot_ui.bar_chart(chart);
-                plot_ui.vline(
-                    VLine::new(
-                        color_mapping_range
-                            .min
-                            .to_unit(global_state.preferred_temperature_unit())
-                            as f64,
-                    )
-                    .color(Color32::GRAY),
-                );
-                plot_ui.vline(
-                    VLine::new(
-                        color_mapping_range
-                            .max
-                            .to_unit(global_state.preferred_temperature_unit())
-                            as f64,
-                    )
-                    .color(Color32::GRAY),
-                );
+                if !color_mapping_range.is_default() {
+                    plot_ui.vline(
+                        VLine::new(
+                            color_mapping_range
+                                .min
+                                .to_unit(global_state.preferred_temperature_unit())
+                                as f64,
+                        )
+                        .color(Color32::GRAY),
+                    );
+                    plot_ui.vline(
+                        VLine::new(
+                            color_mapping_range
+                                .max
+                                .to_unit(global_state.preferred_temperature_unit())
+                                as f64,
+                        )
+                        .color(Color32::GRAY),
+                    );
+                }
             });
     }
 }

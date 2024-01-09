@@ -164,6 +164,14 @@ impl TempRange {
             max: Temp::new(self.max.value_kelvin.max(other.max.value_kelvin)),
         }
     }
+
+    ///
+    /// Returns true if this range is the default range, which is the entire range of possible
+    /// temperatures.
+    ///
+    pub fn is_default(&self) -> bool {
+        self.min == Temp::MIN && self.max == Temp::MAX
+    }
 }
 
 impl Debug for TempRange {

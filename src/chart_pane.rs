@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use eframe::{egui, epaint::Vec2, emath::Vec2b};
+use eframe::{egui, emath::Vec2b, epaint::Vec2};
 use egui_plot::{Line, Plot, PlotPoints};
 
 use crate::{pane_dispatcher::Pane, AppGlobalState};

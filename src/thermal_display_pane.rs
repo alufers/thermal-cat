@@ -4,7 +4,8 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions,
+        Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -24,8 +25,9 @@ pub struct ThermalDisplayPane {
     crosshair_texture_load_result: Option<TextureLoadResult>,
     crosshair_texture: Option<egui::TextureHandle>,
 
-    zoom_factor: f64,
-    center_offset: Vec2,
+    zoom_to_fit: bool,
+    external_zoom_factor: f64,
+    external_zoom_factor_changed: bool,
 }
 
 impl ThermalDisplayPane {
@@ -36,26 +38,37 @@ impl ThermalDisplayPane {
             crosshair_texture_load_result: None,
             crosshair_texture: None,
             camera_image_size: None,
-
-            zoom_factor: 1.0,
-            center_offset: Vec2::new(0.0, 0.0),
+            zoom_to_fit: true,
+            external_zoom_factor: 1.0,
+            external_zoom_factor_changed: false,
         }
     }
 
     fn build_toolbar_ui(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(
-            Layout::left_to_right(egui::Align::Min).with_main_align(egui::Align::Min),
+            Layout::left_to_right(egui::Align::Min)
+                .with_main_align(egui::Align::Min)
+                .with_main_justify(false),
             |ui| {
                 Image::new(egui::include_image!("./icons/zoom-in.svg"))
                     .max_height(16.0)
                     .max_width(16.0)
                     .tint(ui.style().visuals.widgets.active.fg_stroke.color)
                     .ui(ui);
-                zoom_edit_field(ui, &mut self.zoom_factor);
-                Slider::new(&mut self.zoom_factor, 0.1..=10.0)
+                ui.checkbox(&mut self.zoom_to_fit, "Zoom to fit");
+                if zoom_edit_field(ui, &mut self.external_zoom_factor).changed() {
+                    self.external_zoom_factor_changed = true;
+                    self.zoom_to_fit = false;
+                }
+                if Slider::new(&mut self.external_zoom_factor, 0.1..=10.0)
                     .clamp_to_range(true)
                     .show_value(false)
-                    .ui(ui);
+                    .ui(ui)
+                    .changed()
+                {
+                    self.external_zoom_factor_changed = true;
+                    self.zoom_to_fit = false;
+                }
             },
         );
     }
@@ -113,7 +126,7 @@ impl Pane for ThermalDisplayPane {
                 if let Some(texture) = self.camera_texture.as_ref() {
                     let img_size = self.camera_image_size.unwrap();
 
-                    Plot::new("thermal_display_plot")
+                    let plot_response = Plot::new("thermal_display_plot")
                         .show_grid(false)
                         .show_axes(false)
                         .allow_boxed_zoom(false)
@@ -123,21 +136,37 @@ impl Pane for ThermalDisplayPane {
                         .allow_scroll(false)
                         .data_aspect(1.0)
                         .show(ui, |plot_ui| {
-                            // let's manually set the bounds we need
+                            if self.zoom_to_fit {
+                                // let's manually set the bounds we need
 
-                            let center_x = img_size.0 as f64 / 2.0 + self.center_offset.x as f64;
-                            let center_y = img_size.1 as f64 / 2.0 + self.center_offset.y as f64;
+                                let center_x = img_size.0 as f64 / 2.0;
+                                let center_y = img_size.1 as f64 / 2.0;
 
-                            plot_ui.set_plot_bounds(PlotBounds::from_min_max(
-                                [
-                                    center_x - (img_size.0 as f64 / 2.0) * (1.0 / self.zoom_factor),
-                                    center_y - (img_size.1 as f64 / 2.0) * (1.0 / self.zoom_factor),
-                                ],
-                                [
-                                    center_x + (img_size.0 as f64 / 2.0) * (1.0 / self.zoom_factor),
-                                    center_y + (img_size.1 as f64 / 2.0) * (1.0 / self.zoom_factor),
-                                ],
-                            ));
+                                plot_ui.set_plot_bounds(PlotBounds::from_min_max(
+                                    [
+                                        center_x - (img_size.0 as f64 / 2.0) * (1.0),
+                                        center_y - (img_size.1 as f64 / 2.0) * (1.0),
+                                    ],
+                                    [
+                                        center_x + (img_size.0 as f64 / 2.0) * (1.0),
+                                        center_y + (img_size.1 as f64 / 2.0) * (1.0),
+                                    ],
+                                ));
+                            }
+
+                            if self.external_zoom_factor_changed {
+                                self.external_zoom_factor_changed = false;
+                                let curr_zoom_factor = (img_size.0 as f64
+                                    / plot_ui.plot_bounds().width())
+                                .max(img_size.1 as f64 / plot_ui.plot_bounds().height());
+                                let zoom_delta =
+                                    (self.external_zoom_factor / curr_zoom_factor) as f32;
+
+                                plot_ui.zoom_bounds(
+                                    Vec2::new(zoom_delta, zoom_delta),
+                                    plot_ui.plot_bounds().center(),
+                                )
+                            }
 
                             plot_ui.image(PlotImage::new(
                                 texture,
@@ -246,31 +275,28 @@ impl Pane for ThermalDisplayPane {
                                         .unwrap_or(zoom_delta_from_scroll)
                                 });
 
-                                if zoom_delta != 0.0 {
-                                    self.zoom_factor *= zoom_delta as f64;
-                                    self.zoom_factor = self.zoom_factor.max(0.1);
-                                    self.zoom_factor = self.zoom_factor.min(10.0);
-
-                                    if (1.0 - self.zoom_factor).abs() < 0.055 {
-                                        // snap to 1.0
-                                        self.zoom_factor = 1.0;
-                                    }
+                                if zoom_delta != 1.0 {
+                                    self.zoom_to_fit = false;
+                                    plot_ui.zoom_bounds_around_hovered(Vec2::new(
+                                        zoom_delta, zoom_delta,
+                                    ))
                                 }
                             }
-                            if plot_ui.response().dragged()
-                                && plot_ui.response().ctx.input(|inp| {
-                                    inp.pointer.button_down(egui::PointerButton::Middle)
-                                })
-                            {
+                            if plot_ui.response().dragged_by(egui::PointerButton::Middle) {
+                                self.zoom_to_fit = false;
                                 let delta = plot_ui.response().drag_delta();
 
-                                self.center_offset += delta
-                                    * Vec2::new(
-                                        (-1.0 / plot_ui.transform().dpos_dvalue_x()) as f32,
-                                        (-1.0 / plot_ui.transform().dpos_dvalue_y()) as f32,
-                                    );
+                                let plot_transform = Vec2::new(
+                                    (-1.0 / plot_ui.transform().dpos_dvalue_x()) as f32,
+                                    (-1.0 / plot_ui.transform().dpos_dvalue_y()) as f32,
+                                );
+                                plot_ui.translate_bounds(plot_transform * delta);
                             }
                         });
+
+                    self.external_zoom_factor = (img_size.0 as f64
+                        / plot_response.transform.bounds().width())
+                    .max(img_size.1 as f64 / plot_response.transform.bounds().height())
                 }
             });
         });
@@ -281,7 +307,7 @@ pub fn zoom_edit_field(ui: &mut Ui, zoom_value: &mut f64) -> Response {
     let mut tmp_value = *zoom_value * 100.0;
     let res = ui.add(
         DragValue::new(&mut tmp_value)
-            .speed(5.0)
+            .speed(3.0)
             .max_decimals(0)
             .suffix("%")
             .clamp_range(10.0..=1000.0),

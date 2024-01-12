@@ -172,8 +172,9 @@ pub fn dynamic_curve_editor(
         .allow_boxed_zoom(false)
         .show_x(false)
         .show_y(false)
-        .data_aspect(1.0)
-        .view_aspect(1.0)
+        .height(250.0)
+        // .data_aspect(1.0)
+        // .view_aspect(1.0)
         .x_axis_formatter(move |x, _, _| {
             format!(
                 "{:.0} {}",
@@ -284,13 +285,40 @@ pub fn dynamic_curve_editor(
 
             // draw point markers
             for (i, p) in curve.points.iter().enumerate() {
-                let color = if let Some(hovered_idx) = hovered_point_idx
+                let is_dragged = state.dragged_point_idx == Some(i);
+                let border_color = if let Some(hovered_idx) = hovered_point_idx
                     && i == hovered_idx
                 {
-                    Color32::RED
+                    plot_ui
+                        .ctx()
+                        .style()
+                        .visuals
+                        .widgets
+                        .hovered
+                        .fg_stroke
+                        .color
                 } else {
-                    Color32::WHITE
+                    plot_ui
+                        .ctx()
+                        .style()
+                        .visuals
+                        .widgets
+                        .inactive
+                        .fg_stroke
+                        .color
                 };
+                if is_dragged {
+                    plot_ui.points(
+                        Points::new(vec![[p.x() as f64, p.y() as f64]])
+                            .shape(match p {
+                                CurvePoint::Sharp(_, _) => MarkerShape::Square,
+                                CurvePoint::Smooth(_, _) => MarkerShape::Circle,
+                            })
+                            .color(plot_ui.ctx().style().visuals.selection.bg_fill)
+                            .filled(true)
+                            .radius(5.0),
+                    );
+                }
 
                 plot_ui.points(
                     Points::new(vec![[p.x() as f64, p.y() as f64]])
@@ -298,8 +326,8 @@ pub fn dynamic_curve_editor(
                             CurvePoint::Sharp(_, _) => MarkerShape::Square,
                             CurvePoint::Smooth(_, _) => MarkerShape::Circle,
                         })
-                        .color(color)
-                        .filled(state.dragged_point_idx == Some(i))
+                        .color(border_color)
+                        .filled(false)
                         .radius(5.0),
                 );
             }

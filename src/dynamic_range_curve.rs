@@ -7,19 +7,19 @@ use egui_plot::{Line, MarkerShape, Plot, PlotPoints, Points};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CurvePoint {
-    Sharp(f64, f64),
-    Smooth(f64, f64),
+    Sharp(f32, f32),
+    Smooth(f32, f32),
 }
 
 impl CurvePoint {
-    pub fn x(&self) -> f64 {
+    pub fn x(&self) -> f32 {
         match self {
             CurvePoint::Sharp(x, _) => *x,
             CurvePoint::Smooth(x, _) => *x,
         }
     }
 
-    pub fn y(&self) -> f64 {
+    pub fn y(&self) -> f32 {
         match self {
             CurvePoint::Sharp(_, y) => *y,
             CurvePoint::Smooth(_, y) => *y,
@@ -33,12 +33,12 @@ impl CurvePoint {
     pub fn set_pos(&mut self, pos: Vec2) {
         match self {
             CurvePoint::Sharp(x, y) => {
-                *x = pos.x as f64;
-                *y = pos.y as f64;
+                *x = pos.x;
+                *y = pos.y;
             }
             CurvePoint::Smooth(x, y) => {
-                *x = pos.x as f64;
-                *y = pos.y as f64;
+                *x = pos.x;
+                *y = pos.y;
             }
         }
     }
@@ -63,7 +63,7 @@ impl DynamicRangeCurve {
             && self.points[0] == CurvePoint::Sharp(0.0, 0.0)
             && self.points[1] == CurvePoint::Sharp(1.0, 1.0)
     }
-    pub fn get_value(&self, x: f64) -> f64 {
+    pub fn get_value(&self, x: f32) -> f32 {
         for i in 0..self.points.len() - 1 {
             let p1 = &self.points[i];
             let p2 = &self.points[i + 1];
@@ -112,7 +112,22 @@ struct CurveEditorState {
     dragged_point_idx: Option<usize>,
 }
 
-pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut DynamicRangeCurve) {
+#[derive(Clone, Debug, Default)]
+pub struct CurveEditorResponse {
+    changed: bool,
+}
+impl CurveEditorResponse {
+    pub fn changed(&self) -> bool {
+        self.changed
+    }
+}
+
+pub fn dynamic_curve_editor(
+    ui: &mut Ui,
+    id: impl std::hash::Hash,
+    curve: &mut DynamicRangeCurve,
+) -> CurveEditorResponse {
+    let mut response = CurveEditorResponse::default();
     let memory_id = Id::new(id);
 
     ui.with_layout(
@@ -128,6 +143,7 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
                 .clicked()
             {
                 *curve = DynamicRangeCurve::default();
+                response.changed = true;
             }
         },
     );
@@ -156,8 +172,8 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
             let n = plot_ui.response().rect.width() as i32 / 4;
             let line_points: PlotPoints = (0..=n)
                 .map(|i| {
-                    let x = i as f64 / n as f64;
-                    [x, curve.get_value(x)]
+                    let x = i as f32 / n as f32;
+                    [x as f64, curve.get_value(x) as f64]
                 })
                 .collect();
             plot_ui.line(Line::new(line_points));
@@ -182,7 +198,8 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
             if plot_ui.response().drag_started() {
                 state.dragged_point_idx = hovered_point_idx.or_else(|| {
                     plot_ui.pointer_coordinate().map(|pointer_pos| {
-                        let p = CurvePoint::Sharp(pointer_pos.x, pointer_pos.y);
+                        let p = CurvePoint::Sharp(pointer_pos.x as f32, pointer_pos.y as f32);
+                        response.changed = true;
                         curve.insert_point_at(p)
                     })
                 });
@@ -192,25 +209,28 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
             if let Some(drag_idx) = state.dragged_point_idx {
                 match curve.points.get(drag_idx) {
                     Some(point) => {
-                        let new_pos = (point.pos() + plot_ui.pointer_coordinate_drag_delta())
-                            .clamp(Vec2::ZERO, Vec2::splat(1.0));
-                        let exceeds_other_points = curve
-                            .points
-                            .get(drag_idx.wrapping_sub(1)) // if it wraps around, it's fine
-                            .map(|f| new_pos.x < (f.x() as f32))
-                            .unwrap_or_default()
-                            || curve
+                        if plot_ui.pointer_coordinate_drag_delta().length() > f32::EPSILON {
+                            let new_pos = (point.pos() + plot_ui.pointer_coordinate_drag_delta())
+                                .clamp(Vec2::ZERO, Vec2::splat(1.0));
+                            let exceeds_other_points = curve
                                 .points
-                                .get(drag_idx + 1)
-                                .map(|f| new_pos.x > (f.x() as f32))
-                                .unwrap_or_default();
-                        if !exceeds_other_points {
-                            curve.points[drag_idx].set_pos(new_pos);
-                        } else {
-                            // user has dragged the point to far, remove it
-                            curve.points.remove(drag_idx);
-                            state.dragged_point_idx = None;
-                            state_dirty = true;
+                                .get(drag_idx.wrapping_sub(1)) // if it wraps around, it's fine
+                                .map(|f| new_pos.x < (f.x() as f32))
+                                .unwrap_or_default()
+                                || curve
+                                    .points
+                                    .get(drag_idx + 1)
+                                    .map(|f| new_pos.x > (f.x() as f32))
+                                    .unwrap_or_default();
+                            if !exceeds_other_points {
+                                curve.points[drag_idx].set_pos(new_pos);
+                            } else {
+                                // user has dragged the point to far, remove it
+                                curve.points.remove(drag_idx);
+                                state.dragged_point_idx = None;
+                                state_dirty = true;
+                            }
+                            response.changed = true;
                         }
                     }
                     None => {
@@ -231,7 +251,7 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
                 };
 
                 plot_ui.points(
-                    Points::new(vec![[p.x(), p.y()]])
+                    Points::new(vec![[p.x() as f64, p.y() as f64]])
                         .shape(match p {
                             CurvePoint::Sharp(_, _) => MarkerShape::Square,
                             CurvePoint::Smooth(_, _) => MarkerShape::Circle,
@@ -252,4 +272,5 @@ pub fn dynamic_curve_editor(ui: &mut Ui, id: impl std::hash::Hash, curve: &mut D
                     .memory_mut(|mem| mem.data.insert_temp(id_clone, state_clone));
             }
         });
+    response
 }

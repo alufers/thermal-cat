@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Error};
-use eframe::epaint::ColorImage;
+use eframe::epaint::{Color32, ColorImage};
 use nokhwa::Camera;
 use uuid::Uuid;
 
@@ -14,7 +14,7 @@ use crate::{
     camera_adapter::CameraAdapter,
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
-    temperature::TempRange,
+    temperature::{Temp, TempRange},
     thermal_data::{ThermalDataHistogram, ThermalDataRotation},
     thermal_gradient::ThermalGradient,
 };
@@ -37,6 +37,18 @@ pub struct ThermalCapturerSettings {
     pub rotation: ThermalDataRotation,
     pub gizmo: Gizmo,
     pub dynamic_range_curve: DynamicRangeCurve,
+}
+
+impl ThermalCapturerSettings {
+    //
+    // Returns the color corresponding to the given temperature,
+    // applying all necessary transformations (dynamic range curve, gradient)
+    //
+    pub fn temp_to_color(&self, temp: Temp) -> Color32 {
+        let mut fac = self.manual_range.factor(temp);
+        fac = self.dynamic_range_curve.get_value(fac);
+        self.gradient.get_color(fac)
+    }
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
@@ -123,9 +135,7 @@ impl ThermalCapturer {
                     mapping_range = ctx.settings.manual_range;
                 }
 
-                let image = thermal_data.map_to_image(|temp| {
-                    ctx.settings.gradient.get_color(mapping_range.factor(temp))
-                });
+                let image = thermal_data.map_to_image(|t| ctx.settings.temp_to_color(t));
 
                 let mut gizmo_results = HashMap::default();
                 ctx.settings
@@ -185,15 +195,21 @@ impl ThermalCapturer {
                 let result = produce_result(&mut ctx);
                 ctx.result_sender.send(result).unwrap();
                 (ctx.callback)();
-                if let Ok(cmd) = ctx.cmd_receiver.try_recv() {
-                    match cmd {
-                        ThermalCapturerCmd::Stop => {
-                            ctx.camera.stop_stream().unwrap();
-                            break;
+
+                // drain the command queue
+                loop {
+                    if let Ok(cmd) = ctx.cmd_receiver.try_recv() {
+                        match cmd {
+                            ThermalCapturerCmd::Stop => {
+                                ctx.camera.stop_stream().unwrap();
+                                break;
+                            }
+                            ThermalCapturerCmd::SetSettings(range_settings) => {
+                                ctx.settings = range_settings;
+                            }
                         }
-                        ThermalCapturerCmd::SetSettings(range_settings) => {
-                            ctx.settings = range_settings;
-                        }
+                    } else {
+                        break;
                     }
                 }
             }

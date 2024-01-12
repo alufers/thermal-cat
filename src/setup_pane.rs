@@ -330,11 +330,18 @@ impl Pane for SetupPane {
         CollapsingHeader::new(curve_heading)
             .id_source("curve_editor_header")
             .show(ui, |ui| {
-                dynamic_curve_editor(
+                if dynamic_curve_editor(
                     ui,
                     "main_curve_editor",
                     &mut global_state.thermal_capturer_settings.dynamic_range_curve,
-                );
+                )
+                .changed()
+                {
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.set_settings(settings_clone);
+                    }
+                }
             });
 
         ui.separator();

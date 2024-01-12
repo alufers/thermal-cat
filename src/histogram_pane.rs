@@ -57,8 +57,7 @@ impl Pane for HistogramPane {
                     .fill(
                         global_state
                             .thermal_capturer_settings
-                            .gradient
-                            .get_color(color_mapping_range.factor(p.temperature)),
+                            .temp_to_color(p.temperature),
                     )
                 })
                 .collect(),

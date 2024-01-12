@@ -3,13 +3,14 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use anyhow::Error;
-use eframe::egui::WidgetText;
-use eframe::egui::{self, Button};
+use eframe::egui::{self, Button, CollapsingHeader};
+use eframe::egui::{RichText, WidgetText};
 use eframe::epaint::text::LayoutJob;
 use nokhwa::utils::CameraIndex;
 use nokhwa::Camera;
 
 use crate::camera_enumerator::{enumerate_cameras, EnumeratedCamera};
+use crate::dynamic_range_curve::dynamic_curve_editor;
 use crate::gradient_selector_widget::GradientSelectorView;
 use crate::pane_dispatcher::Pane;
 
@@ -313,6 +314,28 @@ impl Pane for SetupPane {
                 thermal_capturer.set_settings(settings_clone);
             }
         }
+
+        ui.separator();
+        let has_modified_curve = !global_state
+            .thermal_capturer_settings
+            .dynamic_range_curve
+            .is_default();
+
+        let curve_heading = if has_modified_curve {
+            RichText::new("Dynamic Range Curve *").strong()
+        } else {
+            RichText::new("Dynamic Range Curve")
+        };
+
+        CollapsingHeader::new(curve_heading)
+            .id_source("curve_editor_header")
+            .show(ui, |ui| {
+                dynamic_curve_editor(
+                    ui,
+                    "main_curve_editor",
+                    &mut global_state.thermal_capturer_settings.dynamic_range_curve,
+                );
+            });
 
         ui.separator();
 

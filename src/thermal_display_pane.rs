@@ -4,8 +4,7 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions,
-        Ui, Widget,
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},

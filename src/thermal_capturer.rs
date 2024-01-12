@@ -12,6 +12,7 @@ use uuid::Uuid;
 use crate::{
     auto_display_range_controller::AutoDisplayRangeController,
     camera_adapter::CameraAdapter,
+    dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
     temperature::TempRange,
     thermal_data::{ThermalDataHistogram, ThermalDataRotation},
@@ -35,6 +36,7 @@ pub struct ThermalCapturerSettings {
     pub gradient: ThermalGradient,
     pub rotation: ThermalDataRotation,
     pub gizmo: Gizmo,
+    pub dynamic_range_curve: DynamicRangeCurve,
 }
 
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;

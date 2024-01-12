@@ -4,6 +4,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use chart_pane::ChartPane;
+use dynamic_range_curve::DynamicRangeCurve;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
 use histogram_pane::HistogramPane;
@@ -32,6 +33,7 @@ mod auto_display_range_controller;
 mod camera_adapter;
 mod camera_enumerator;
 mod chart_pane;
+mod dynamic_range_curve;
 mod gizmos;
 mod gradient_selector_widget;
 mod histogram_pane;
@@ -157,6 +159,7 @@ impl Default for ThermalViewerApp {
                         Color32::from_rgb(72, 219, 251),
                     ),
                 ]),
+                dynamic_range_curve: DynamicRangeCurve::default(),
             },
             last_thermal_capturer_result: None,
             hotplug_detector: None,

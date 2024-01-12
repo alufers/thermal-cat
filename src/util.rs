@@ -39,7 +39,7 @@ pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
             ImageRotation::Clockwise270 => x,
         };
 
-        newImg.pixels[new_y * newImg.size[0] + new_x] = *pixel;
+        new_img.pixels[new_y * new_img.size[0] + new_x] = *pixel;
     }
-    return newImg;
+    return new_img;
 }

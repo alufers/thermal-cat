@@ -316,6 +316,9 @@ impl Pane for SetupPane {
         }
 
         ui.separator();
+
+        // Curve editor
+
         let has_modified_curve = !global_state
             .thermal_capturer_settings
             .dynamic_range_curve
@@ -330,10 +333,19 @@ impl Pane for SetupPane {
         CollapsingHeader::new(curve_heading)
             .id_source("curve_editor_header")
             .show(ui, |ui| {
+                let manual_range = global_state.thermal_capturer_settings.manual_range;
+                let curr_range = global_state
+                    .last_thermal_capturer_result
+                    .as_ref()
+                    .map(|r| r.image_range)
+                    .unwrap_or(manual_range);
+                let unit = global_state.preferred_temperature_unit();
                 if dynamic_curve_editor(
                     ui,
                     "main_curve_editor",
-                    &mut global_state.thermal_capturer_settings.dynamic_range_curve,
+                    &mut global_state.thermal_capturer_settings,
+                    curr_range,
+                    unit,
                 )
                 .changed()
                 {

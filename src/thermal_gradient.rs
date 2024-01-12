@@ -1,3 +1,5 @@
+use std::hash::{Hasher, Hash};
+
 use eframe::epaint::{Color32, ColorImage};
 
 use once_cell::sync::Lazy;
@@ -54,7 +56,14 @@ impl ThermalGradientPoint {
     }
 }
 
-#[derive(Clone)]
+impl Hash for ThermalGradientPoint {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.color.hash(state);
+        self.pos.to_bits().hash(state);
+    }
+}
+
+#[derive(Clone, Hash)]
 pub struct ThermalGradient {
     ///
     // UUID of the gradient (will be important when custom gradients are supported)

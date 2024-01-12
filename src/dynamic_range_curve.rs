@@ -1,9 +1,18 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use eframe::{
-    egui::{self, CursorIcon, Id, Image, ImageButton, Layout, Ui},
-    emath::Align,
+    egui::{self, CursorIcon, Id, Image, ImageButton, Layout, TextureOptions, Ui},
+    emath::{Align, Vec2b},
     epaint::{Color32, Vec2},
 };
-use egui_plot::{Line, MarkerShape, Plot, PlotPoints, Points};
+use egui_plot::{Line, MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, PlotPoints, Points};
+
+use crate::{
+    temperature::{TempRange, TemperatureUnit},
+    thermal_capturer::ThermalCapturerSettings,
+    thermal_gradient::ThermalGradient,
+    util::{rotate_image, ImageRotation},
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CurvePoint {
@@ -107,9 +116,11 @@ impl DynamicRangeCurve {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone)]
 struct CurveEditorState {
     dragged_point_idx: Option<usize>,
+    ref_gradient_tex: Option<egui::TextureHandle>,
+    last_gradient_hash: u64,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -125,10 +136,15 @@ impl CurveEditorResponse {
 pub fn dynamic_curve_editor(
     ui: &mut Ui,
     id: impl std::hash::Hash,
-    curve: &mut DynamicRangeCurve,
+    settings: &mut ThermalCapturerSettings,
+    current_range: TempRange,
+    unit: TemperatureUnit,
 ) -> CurveEditorResponse {
     let mut response = CurveEditorResponse::default();
     let memory_id = Id::new(id);
+
+    let curve = &mut settings.dynamic_range_curve;
+    let gradient = &settings.gradient;
 
     ui.with_layout(
         Layout::right_to_left(Align::Min).with_cross_justify(false),
@@ -148,7 +164,7 @@ pub fn dynamic_curve_editor(
         },
     );
     Plot::new(memory_id.with("plot"))
-        .show_axes(false)
+        .show_axes(Vec2b::new(true, false))
         .allow_drag(false)
         .allow_zoom(false)
         .allow_double_click_reset(false)
@@ -158,17 +174,43 @@ pub fn dynamic_curve_editor(
         .show_y(false)
         .data_aspect(1.0)
         .view_aspect(1.0)
-        .include_x(0.0)
-        .include_y(0.0)
-        .include_x(1.0)
-        .include_y(1.0)
+        .x_axis_formatter(move |x, _, _| {
+            format!(
+                "{:.0} {}",
+                current_range.factor_to_temp(x as f32).to_unit(unit),
+                unit.suffix()
+            )
+        })
         .show(ui, |plot_ui| {
             let mut state = plot_ui
                 .ctx()
                 .memory(|mem| mem.data.get_temp::<CurveEditorState>(memory_id))
                 .unwrap_or_default();
+
             let mut state_dirty = false;
 
+            // generate refgerence gradient texture if needed
+            let mut hasher = DefaultHasher::new();
+            gradient.hash(&mut hasher);
+            let gradient_hash: u64 = hasher.finish();
+            if state.last_gradient_hash != gradient_hash {
+                state.last_gradient_hash = gradient_hash;
+                state.ref_gradient_tex = Some(plot_ui.ctx().load_texture(
+                    "curve_editor_ref_gradient",
+                    rotate_image(
+                        gradient.create_demo_image(128, 2),
+                        ImageRotation::Clockwise90,
+                    ),
+                    TextureOptions {
+                        ..Default::default()
+                    },
+                ));
+                state_dirty = true;
+            }
+
+            plot_ui.set_plot_bounds(PlotBounds::from_min_max([-0.05, -0.05], [1.05, 1.05]));
+
+            // draw line
             let n = plot_ui.response().rect.width() as i32 / 4;
             let line_points: PlotPoints = (0..=n)
                 .map(|i| {
@@ -261,6 +303,17 @@ pub fn dynamic_curve_editor(
                         .radius(5.0),
                 );
             }
+
+            // draw reference gradient
+
+            plot_ui.image(PlotImage::new(
+                state
+                    .ref_gradient_tex
+                    .as_ref()
+                    .expect("ref_gradient_tex not set"),
+                PlotPoint::new(-0.5, 0.5),
+                Vec2::new(1.0, 1.0),
+            ));
 
             // persist state if dirty
             if state_dirty {

@@ -50,6 +50,7 @@ mod thermal_display_pane;
 mod thermal_gradient;
 mod user_preferences;
 mod user_preferences_window;
+mod util;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).

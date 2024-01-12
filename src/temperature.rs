@@ -136,9 +136,7 @@ impl TempRange {
     }
 
     pub fn factor_to_temp(&self, factor: f32) -> Temp {
-        Temp::new(
-            self.min.value_kelvin + (self.max.value_kelvin - self.min.value_kelvin) * factor,
-        )
+        Temp::new(self.min.value_kelvin + (self.max.value_kelvin - self.min.value_kelvin) * factor)
     }
 
     pub fn contains(&self, temp: Temp) -> bool {

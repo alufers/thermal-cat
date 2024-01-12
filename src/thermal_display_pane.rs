@@ -9,7 +9,7 @@ use eframe::{
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
 };
-use egui_plot::{Plot, PlotBounds, PlotImage, PlotPoint, Text};
+use egui_plot::{MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, Points, Text};
 
 use crate::{
     gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos, AppGlobalState,
@@ -192,24 +192,49 @@ impl Pane for ThermalDisplayPane {
 
                                         let point = PlotPoint::new(x, y);
                                         let _size = 10.0;
-                                        if let Some(crosshair) = self.crosshair_texture.as_ref() {
-                                            // white backdrop for contrast
-                                            plot_ui.image(PlotImage::new(
-                                                crosshair,
-                                                point,
-                                                // 5 seems okay
-                                                Vec2::new(6.0, 6.0),
-                                            ));
-                                            plot_ui.image(
-                                                PlotImage::new(
-                                                    crosshair,
-                                                    point,
-                                                    // 5 seems okay
-                                                    Vec2::new(5.0, 5.0),
-                                                )
-                                                .tint(c.color),
-                                            );
-                                        }
+
+                                        //TODO: Decide which one I want...
+
+                                        // if let Some(crosshair) = self.crosshair_texture.as_ref() {
+                                        //     // white backdrop for contrast
+                                        //     plot_ui.image(PlotImage::new(
+                                        //         crosshair,
+                                        //         point,
+                                        //         // 5 seems okay
+                                        //         Vec2::new(6.0, 6.0),
+                                        //     ));
+                                        //     plot_ui.image(
+                                        //         PlotImage::new(
+                                        //             crosshair,
+                                        //             point,
+                                        //             // 5 seems okay
+                                        //             Vec2::new(5.0, 5.0),
+                                        //         )
+                                        //         .tint(c.color),
+                                        //     );
+                                        // }
+
+                                        plot_ui.points(
+                                            Points::new(vec![[x, y]])
+                                                .shape(MarkerShape::Circle)
+                                                .radius(12.0)
+                                                .filled(true)
+                                                .color(Color32::BLACK.gamma_multiply(0.3)),
+                                        );
+                                        plot_ui.points(
+                                            Points::new(vec![[x, y]])
+                                                .shape(MarkerShape::Circle)
+                                                .radius(8.0)
+                                                .filled(false)
+                                                .color(Color32::WHITE),
+                                        );
+                                        plot_ui.points(
+                                            Points::new(vec![[x, y]])
+                                                .shape(MarkerShape::Plus)
+                                                .radius(12.0)
+                                                .color(c.color),
+                                        );
+
                                         if c.show_temperature_label {
                                             plot_ui.text(
                                                 Text::new(

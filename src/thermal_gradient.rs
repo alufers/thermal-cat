@@ -1,4 +1,4 @@
-use std::hash::{Hasher, Hash};
+use std::hash::{Hash, Hasher};
 
 use eframe::epaint::{Color32, ColorImage};
 

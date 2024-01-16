@@ -44,8 +44,10 @@ impl ThermalCapturerSettings {
     // Returns the color corresponding to the given temperature,
     // applying all necessary transformations (dynamic range curve, gradient)
     //
-    pub fn temp_to_color(&self, temp: Temp) -> Color32 {
-        let mut fac = self.manual_range.factor(temp);
+    // override_range should be the actual range of the image. If not available, pass None.
+    //
+    pub fn temp_to_color(&self, temp: Temp, override_range: Option<TempRange>) -> Color32 {
+        let mut fac = override_range.unwrap_or(self.manual_range).factor(temp);
         fac = self.dynamic_range_curve.get_value(fac);
         self.gradient.get_color(fac)
     }
@@ -135,7 +137,8 @@ impl ThermalCapturer {
                     mapping_range = ctx.settings.manual_range;
                 }
 
-                let image = thermal_data.map_to_image(|t| ctx.settings.temp_to_color(t));
+                let image = thermal_data
+                    .map_to_image(|t| ctx.settings.temp_to_color(t, Some(mapping_range)));
 
                 let mut gizmo_results = HashMap::default();
                 ctx.settings
@@ -193,7 +196,10 @@ impl ThermalCapturer {
             }
             loop {
                 let result = produce_result(&mut ctx);
-                ctx.result_sender.send(result).unwrap();
+                if let Err(err) = ctx.result_sender.send(result) {
+                    log::error!("Error sending result: {}", err);
+                    break;
+                }
                 (ctx.callback)();
 
                 // drain the command queue

@@ -55,9 +55,13 @@ impl Pane for HistogramPane {
                     )
                     .width(bucket_width)
                     .fill(
-                        global_state
-                            .thermal_capturer_settings
-                            .temp_to_color(p.temperature),
+                        global_state.thermal_capturer_settings.temp_to_color(
+                            p.temperature,
+                            global_state
+                                .last_thermal_capturer_result
+                                .as_ref()
+                                .map(|res| res.image_range),
+                        ),
                     )
                 })
                 .collect(),

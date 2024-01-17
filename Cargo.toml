@@ -48,3 +48,12 @@ category = "Developer Tool"
 short_description = "A thermal camera viewer."
 description = "A thermal camera viewer."
 deb_depends = ["libgl1-mesa-glx", "libsdl2-2.0-0 (>= 2.0.5)"]
+
+
+[package.metadata.appimage]
+auto_link = true
+auto_link_exclude_list = [
+    "libc.so*",
+    "libdl.so*",
+    "libpthread.so*",
+]

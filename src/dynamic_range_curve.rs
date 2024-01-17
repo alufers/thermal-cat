@@ -3,14 +3,13 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use eframe::{
     egui::{self, CursorIcon, Id, Image, ImageButton, Layout, TextureOptions, Ui},
     emath::{Align, Vec2b},
-    epaint::{Color32, Vec2},
+    epaint::Vec2,
 };
 use egui_plot::{Line, MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, PlotPoints, Points};
 
 use crate::{
     temperature::{TempRange, TemperatureUnit},
     thermal_capturer::ThermalCapturerSettings,
-    thermal_gradient::ThermalGradient,
     util::{rotate_image, ImageRotation},
 };
 

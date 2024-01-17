@@ -190,9 +190,9 @@ impl Pane for ThermalDisplayPane {
 
                                         let y = img_size.1 as f64 - result.pos.y as f64;
 
-                                        let point = PlotPoint::new(x, y);
                                         let _size = 10.0;
 
+                                        // let point = PlotPoint::new(x, y);
                                         //TODO: Decide which one I want...
 
                                         // if let Some(crosshair) = self.crosshair_texture.as_ref() {

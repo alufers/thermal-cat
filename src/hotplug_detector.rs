@@ -60,6 +60,8 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             vendor_id,
             product_id,
         };
+        // let udev on linux settle down and assign permissions
+        thread::sleep(std::time::Duration::from_millis(500));
         let _ = self.evt_sender.send(evt);
         if let Some(cb) = self.callback.lock().as_ref() {
             cb(evt)
@@ -75,6 +77,7 @@ impl<T: UsbContext> rusb::Hotplug<T> for HotplugEventHandler {
             vendor_id,
             product_id,
         };
+
         let _ = self.evt_sender.send(evt);
         if let Some(cb) = self.callback.lock().as_ref() {
             cb(evt)
@@ -92,16 +95,21 @@ pub fn run_hotplug_detector<F: Fn(HotplugEvent) + Send + 'static>(
             receiver,
             callback: Arc::new(Mutex::new(Some(Box::new(callback)))),
         };
-        let reg: Box<rusb::Registration<Context>> =
-            Box::new(HotplugBuilder::new().enumerate(true).register(
+
+        let cloned_callback = detector.callback.clone();
+        thread::spawn(move || {
+            let hotplug_result = HotplugBuilder::new().register(
                 &context,
                 Box::new(HotplugEventHandler {
                     evt_sender: sender,
-                    callback: detector.callback.clone(),
+                    callback: cloned_callback,
                 }),
-            )?);
-
-        thread::spawn(move || {
+            );
+            if let Err(e) = hotplug_result {
+                log::error!("error registering hotplug handler: {:?}", e);
+                return;
+            }
+            let reg: Box<rusb::Registration<Context>> = Box::new(hotplug_result.unwrap());
             loop {
                 let result = context.handle_events(None);
                 if result.is_err() {

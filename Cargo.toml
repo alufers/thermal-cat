@@ -13,7 +13,7 @@ eframe = { version = "0.25.0", features = ["wgpu"] }
 egui_dock = "0.10.0"
 egui_extras = { version = "0.25.0", features = ["svg"] }
 egui_plot = "0.25.0"
-env_logger = "0.10.1"
+env_logger = "0.10.2"
 log = "0.4.20"
 nokhwa = { git = "https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-macos-usb-camera", features = [
     "input-v4l",

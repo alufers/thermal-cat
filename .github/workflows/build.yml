@@ -33,6 +33,7 @@ jobs:
         name: Install cargo-appimage
         run: |
           sudo curl -L https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o /usr/local/bin/appimagetool
+          sudo chmod +x /usr/local/bin/appimagetool
           cargo install cargo-appimage
           cp thermal-cat-logo-512px.png icon.png
           cargo appimage

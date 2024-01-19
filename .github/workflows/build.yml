@@ -30,8 +30,9 @@ jobs:
           cargo install cargo-bundle
           cargo bundle --release
       - if: ${{ matrix.os == 'ubuntu-latest' }}
-        name: Install cargo-appimage
+        name: Install cargo-appimage and build AppImage
         run: |
+          sudo apt-get install -y desktop-file-utils
           sudo curl -L https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o /usr/local/bin/appimagetool
           sudo chmod +x /usr/local/bin/appimagetool
           cargo install cargo-appimage

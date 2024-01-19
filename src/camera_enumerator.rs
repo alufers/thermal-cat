@@ -6,9 +6,7 @@ use eframe::{
 };
 use nokhwa::{native_api_backend, query, utils::CameraInfo};
 
-#[cfg(target_os = "linux")]
 use once_cell::sync::Lazy;
-#[cfg(target_os = "linux")]
 use regex::Regex;
 
 #[derive(Debug, Clone)]

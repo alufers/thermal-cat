@@ -1,7 +1,7 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use eframe::{
-    egui::{self, CursorIcon, Id, Image, ImageButton, Layout, TextureOptions, Ui},
+    egui::{self, Button, CursorIcon, Id, Image, ImageButton, Layout, TextureOptions, Ui},
     emath::{Align, Vec2b},
     epaint::Vec2,
 };
@@ -17,6 +17,12 @@ use crate::{
 pub enum CurvePoint {
     Sharp(f32, f32),
     Smooth(f32, f32),
+}
+
+impl Default for CurvePoint {
+    fn default() -> Self {
+        CurvePoint::Sharp(0.0, 0.0)
+    }
 }
 
 impl CurvePoint {
@@ -35,7 +41,7 @@ impl CurvePoint {
     }
 
     pub fn pos(&self) -> Vec2 {
-        Vec2::new(self.x() as f32, self.y() as f32)
+        Vec2::new(self.x() as f32, self.y())
     }
 
     pub fn set_pos(&mut self, pos: Vec2) {
@@ -50,6 +56,12 @@ impl CurvePoint {
             }
         }
     }
+    pub fn to_smooth(&self) -> CurvePoint {
+        CurvePoint::Smooth(self.x(), self.y())
+    }
+    pub fn to_sharp(&self) -> CurvePoint {
+        CurvePoint::Sharp(self.x(), self.y())
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -60,7 +72,7 @@ pub struct DynamicRangeCurve {
 impl Default for DynamicRangeCurve {
     fn default() -> Self {
         Self {
-            points: vec![CurvePoint::Sharp(0.0, 0.0), CurvePoint::Sharp(1.0, 1.0)],
+            points: vec![CurvePoint::Smooth(0.0, 0.0), CurvePoint::Smooth(1.0, 1.0)],
         }
     }
 }
@@ -68,16 +80,79 @@ impl Default for DynamicRangeCurve {
 impl DynamicRangeCurve {
     pub fn is_default(&mut self) -> bool {
         self.points.len() == 2
-            && self.points[0] == CurvePoint::Sharp(0.0, 0.0)
-            && self.points[1] == CurvePoint::Sharp(1.0, 1.0)
+            && self.points[0] == CurvePoint::Smooth(0.0, 0.0)
+            && self.points[1] == CurvePoint::Smooth(1.0, 1.0)
     }
+
+    // Adapted from: https://github.com/GNOME/gimp/blob/master/app/core/gimpcurve.c#L1188
     pub fn get_value(&self, x: f32) -> f32 {
         for i in 0..self.points.len() - 1 {
-            let p1 = &self.points[i];
-            let p2 = &self.points[i + 1];
-            if p1.x() <= x && x <= p2.x() {
-                let t = (x - p1.x()) / (p2.x() - p1.x());
-                return p1.y() * (1.0 - t) + p2.y() * t;
+            let mut p1 = self.points.get(i.wrapping_sub(1));
+            let p2 = &self.points[i];
+            let p3 = &self.points[i + 1];
+            let mut p4 = self.points.get(i + 2);
+            if p2.x() <= x && x <= p3.x() {
+                // discard information about neighboring points of non smooth points
+                match (p2, p3) {
+                    (CurvePoint::Sharp(_, _), CurvePoint::Sharp(_, _)) => {
+                        p1 = None;
+                        p4 = None;
+                    }
+                    (CurvePoint::Smooth(_, _), CurvePoint::Sharp(_, _)) => {
+                        p4 = None;
+                    }
+                    (CurvePoint::Sharp(_, _), CurvePoint::Smooth(_, _)) => {
+                        p1 = None;
+                    }
+                    (CurvePoint::Smooth(_, _), CurvePoint::Smooth(_, _)) => {
+                        // Bezier curve
+                    }
+                }
+
+                // outer control points
+                let x0 = p2.x();
+                let y0 = p2.y();
+                let x3 = p3.x();
+                let y3 = p3.y();
+
+                let dx = x3 - x0;
+                let dy = y3 - y0;
+
+                if dx <= f32::EPSILON {
+                    return y0;
+                }
+
+                let y1;
+                let y2;
+
+                match (p1, p4) {
+                    (None, None) => {
+                        y1 = y0 + dy / 3.0;
+                        y2 = y0 + dy * 2.0 / 3.0;
+                    }
+                    (Some(p1), None) => {
+                        let slope = (y3 - p1.y()) / (x3 - p1.x());
+                        y1 = y0 + slope * dx / 3.0;
+                        y2 = y3 + (y1 - y3) / 2.0;
+                    }
+                    (None, Some(p4)) => {
+                        let slope = (p4.y() - y0) / (p4.x() - x0);
+                        y2 = y3 - slope * dx / 3.0;
+                        y1 = y0 + (y2 - y0) / 2.0;
+                    }
+                    (Some(p1), Some(p4)) => {
+                        let slope1 = (y3 - p1.y()) / (x3 - p1.x());
+                        let slope2 = (p4.y() - y0) / (p4.x() - x0);
+                        y1 = y0 + slope2 * dx / 3.0;
+                        y2 = y3 - slope1 * dx / 3.0;
+                    }
+                }
+                let t = (x - x0) / dx;
+                let value = y0 * (1.0 - t) * (1.0 - t) * (1.0 - t)
+                    + 3.0 * y1 * (1.0 - t) * (1.0 - t) * t
+                    + 3.0 * y2 * (1.0 - t) * t * t
+                    + y3 * t * t * t;
+                return value.clamp(0.0, 1.0);
             }
         }
         if !self.points.is_empty() {
@@ -95,13 +170,22 @@ impl DynamicRangeCurve {
 
     // Insert a point at the correct position
     // Returns the index of the inserted point
-    pub fn insert_point_at(&mut self, p: CurvePoint) -> usize {
+    pub fn insert_point_at(&mut self, p: CurvePoint, convert_to_neighbors: bool) -> usize {
         let mut insert_idx = None;
+        let mut p = p;
         for i in 0..self.points.len() - 1 {
             let p1 = &self.points[i];
             let p2 = &self.points[i + 1];
             if p1.x() <= p.x() && p.x() <= p2.x() {
                 insert_idx = Some(i + 1);
+                if convert_to_neighbors {
+                    p = match (&p1, &p2) {
+                        (CurvePoint::Sharp(_, _), CurvePoint::Sharp(_, _)) => p.to_sharp(),
+                        (CurvePoint::Smooth(_, _), CurvePoint::Sharp(_, _)) => p.to_smooth(),
+                        (CurvePoint::Sharp(_, _), CurvePoint::Smooth(_, _)) => p.to_smooth(),
+                        (CurvePoint::Smooth(_, _), CurvePoint::Smooth(_, _)) => p.to_smooth(),
+                    }
+                }
                 break;
             }
         }
@@ -238,11 +322,12 @@ pub fn dynamic_curve_editor(
                     .output_mut(|out| out.cursor_icon = CursorIcon::Grab);
             }
             if plot_ui.response().drag_started() {
+                // create a new point if we're not hovering over an existing one
                 state.dragged_point_idx = hovered_point_idx.or_else(|| {
                     plot_ui.pointer_coordinate().map(|pointer_pos| {
                         let p = CurvePoint::Sharp(pointer_pos.x as f32, pointer_pos.y as f32);
                         response.changed = true;
-                        curve.insert_point_at(p)
+                        curve.insert_point_at(p, true)
                     })
                 });
                 state_dirty = true;
@@ -257,12 +342,12 @@ pub fn dynamic_curve_editor(
                             let exceeds_other_points = curve
                                 .points
                                 .get(drag_idx.wrapping_sub(1)) // if it wraps around, it's fine
-                                .map(|f| new_pos.x < (f.x() as f32))
+                                .map(|f| new_pos.x < (f.x()))
                                 .unwrap_or_default()
                                 || curve
                                     .points
                                     .get(drag_idx + 1)
-                                    .map(|f| new_pos.x > (f.x() as f32))
+                                    .map(|f| new_pos.x > f.x() )
                                     .unwrap_or_default();
                             if !exceeds_other_points {
                                 curve.points[drag_idx].set_pos(new_pos);
@@ -310,7 +395,7 @@ pub fn dynamic_curve_editor(
                     plot_ui.points(
                         Points::new(vec![[p.x() as f64, p.y() as f64]])
                             .shape(match p {
-                                CurvePoint::Sharp(_, _) => MarkerShape::Square,
+                                CurvePoint::Sharp(_, _) => MarkerShape::Diamond,
                                 CurvePoint::Smooth(_, _) => MarkerShape::Circle,
                             })
                             .color(plot_ui.ctx().style().visuals.selection.bg_fill)
@@ -322,7 +407,7 @@ pub fn dynamic_curve_editor(
                 plot_ui.points(
                     Points::new(vec![[p.x() as f64, p.y() as f64]])
                         .shape(match p {
-                            CurvePoint::Sharp(_, _) => MarkerShape::Square,
+                            CurvePoint::Sharp(_, _) => MarkerShape::Diamond,
                             CurvePoint::Smooth(_, _) => MarkerShape::Circle,
                         })
                         .color(border_color)
@@ -352,5 +437,56 @@ pub fn dynamic_curve_editor(
                     .memory_mut(|mem| mem.data.insert_temp(id_clone, state_clone));
             }
         });
+
+    ui.allocate_ui_with_layout(
+        Vec2::new(ui.available_width(), 16.0),
+        Layout::right_to_left(Align::Min).with_cross_justify(false),
+        |ui| {
+            let state = ui
+                .ctx()
+                .memory(|mem| mem.data.get_temp::<CurveEditorState>(memory_id))
+                .unwrap_or_default();
+
+            ui.add_enabled_ui(state.dragged_point_idx.is_some(), |ui| {
+                let dragged_point_is_sharp = state
+                    .dragged_point_idx
+                    .and_then(|idx| curve.points.get(idx))
+                    .map(|p| match p {
+                        CurvePoint::Sharp(_, _) => true,
+                        CurvePoint::Smooth(_, _) => false,
+                    });
+                if ui
+                    .add(
+                        Button::image(egui::include_image!("./icons/diamond.svg"))
+                            .selected(dragged_point_is_sharp.unwrap_or_default()),
+                    )
+                    .on_hover_text("Sharp point")
+                    .clicked()
+                {
+                    if let Some(idx) = state.dragged_point_idx {
+                        curve.points[idx] = curve.points[idx].to_sharp();
+                        response.changed = true;
+                    }
+                }
+                if ui
+                    .add(
+                        Button::image(egui::include_image!("./icons/circle.svg")).selected(
+                            dragged_point_is_sharp
+                                .map(|is_sharp| !is_sharp)
+                                .unwrap_or_default(),
+                        ),
+                    )
+                    .on_hover_text("Smooth point")
+                    .clicked()
+                {
+                    if let Some(idx) = state.dragged_point_idx {
+                        curve.points[idx] = curve.points[idx].to_smooth();
+                        response.changed = true;
+                    }
+                }
+            });
+        },
+    );
+
     response
 }

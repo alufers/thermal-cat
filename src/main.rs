@@ -113,6 +113,7 @@ struct ThermalViewerApp {
 
 impl ThermalViewerApp {
     fn set_default_dock_state(&mut self) {
+        self.global_state.borrow_mut().is_thermal_view_maximized = false;
         self.dock_state = DockState::new(vec![Box::new(ThermalDisplayPane::new(
             self.global_state.clone(),
         ))]);

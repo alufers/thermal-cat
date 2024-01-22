@@ -41,7 +41,7 @@ impl CurvePoint {
     }
 
     pub fn pos(&self) -> Vec2 {
-        Vec2::new(self.x() as f32, self.y())
+        Vec2::new(self.x(), self.y())
     }
 
     pub fn set_pos(&mut self, pos: Vec2) {

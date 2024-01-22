@@ -41,5 +41,5 @@ pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
 
         new_img.pixels[new_y * new_img.size[0] + new_x] = *pixel;
     }
-    return new_img;
+    new_img
 }

@@ -203,19 +203,16 @@ impl ThermalCapturer {
                 (ctx.callback)();
 
                 // drain the command queue
-                loop {
-                    if let Ok(cmd) = ctx.cmd_receiver.try_recv() {
-                        match cmd {
-                            ThermalCapturerCmd::Stop => {
-                                ctx.camera.stop_stream().unwrap();
-                                break;
-                            }
-                            ThermalCapturerCmd::SetSettings(range_settings) => {
-                                ctx.settings = range_settings;
-                            }
+
+                while let Ok(cmd) = ctx.cmd_receiver.try_recv() {
+                    match cmd {
+                        ThermalCapturerCmd::Stop => {
+                            ctx.camera.stop_stream().unwrap();
+                            break;
                         }
-                    } else {
-                        break;
+                        ThermalCapturerCmd::SetSettings(range_settings) => {
+                            ctx.settings = range_settings;
+                        }
                     }
                 }
             }

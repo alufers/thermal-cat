@@ -3,8 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use eframe::{
     egui::{
         self,
-        load::{TextureLoadResult, TexturePoll},
-        Button, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
+        load::{TextureLoadResult, TexturePoll}, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
         Widget,
     },
     emath::Align2,
@@ -13,7 +12,8 @@ use eframe::{
 use egui_plot::{MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, Points, Text};
 
 use crate::{
-    gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos, AppGlobalState,
+    gizmos::GizmoKind, pane_dispatcher::Pane, thermal_data::ThermalDataPos,
+    widgets::selectable_image_label::SelectableImageLabel, AppGlobalState,
 };
 
 pub struct ThermalDisplayPane {
@@ -76,12 +76,11 @@ impl ThermalDisplayPane {
                         if ui
                             .add_enabled(
                                 global_state.thermal_capturer_inst.is_some(),
-                                Button::image(
+                                SelectableImageLabel::new(
+                                    global_state.is_thermal_view_maximized,
                                     Image::new(egui::include_image!("./icons/maximize.svg"))
-                                        .max_height(16.0),
-                                )
-                                .frame(false)
-                                .selected(global_state.is_thermal_view_maximized),
+                                        .max_height(14.0),
+                                ),
                             )
                             .clicked()
                         {

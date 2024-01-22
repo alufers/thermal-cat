@@ -52,6 +52,7 @@ mod types;
 mod user_preferences;
 mod user_preferences_window;
 mod util;
+mod widgets;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).

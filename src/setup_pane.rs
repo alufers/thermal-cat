@@ -16,7 +16,7 @@ use crate::pane_dispatcher::Pane;
 
 use crate::temperature_edit_field::temperature_range_edit_field;
 use crate::thermal_capturer::ThermalCapturer;
-use crate::thermal_data::ThermalDataRotation;
+use crate::types::image_rotation::ImageRotation;
 use crate::AppGlobalState;
 
 use anyhow::{Context, Result};
@@ -234,28 +234,28 @@ impl Pane for SetupPane {
             if ui
                 .selectable_value(
                     &mut global_state.thermal_capturer_settings.rotation,
-                    ThermalDataRotation::None,
+                    ImageRotation::None,
                     "None",
                 )
                 .changed()
                 || ui
                     .selectable_value(
                         &mut global_state.thermal_capturer_settings.rotation,
-                        ThermalDataRotation::Clockwise90,
+                        ImageRotation::Clockwise90,
                         "90°",
                     )
                     .changed()
                 || ui
                     .selectable_value(
                         &mut global_state.thermal_capturer_settings.rotation,
-                        ThermalDataRotation::Clockwise180,
+                        ImageRotation::Clockwise180,
                         "180°",
                     )
                     .changed()
                 || ui
                     .selectable_value(
                         &mut global_state.thermal_capturer_settings.rotation,
-                        ThermalDataRotation::Clockwise270,
+                        ImageRotation::Clockwise270,
                         "270°",
                     )
                     .changed()

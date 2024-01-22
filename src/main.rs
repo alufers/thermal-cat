@@ -24,8 +24,8 @@ use pane_dispatcher::{Pane, PaneDispatcher};
 use setup_pane::SetupPane;
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
-use thermal_data::ThermalDataRotation;
 use thermal_display_pane::ThermalDisplayPane;
+use types::image_rotation::ImageRotation;
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
 
@@ -48,6 +48,7 @@ mod thermal_capturer;
 mod thermal_data;
 mod thermal_display_pane;
 mod thermal_gradient;
+mod types;
 mod user_preferences;
 mod user_preferences_window;
 mod util;
@@ -150,7 +151,7 @@ impl Default for ThermalViewerApp {
             prefs: None,
             thermal_capturer_inst: None,
             thermal_capturer_settings: ThermalCapturerSettings {
-                rotation: ThermalDataRotation::None,
+                rotation: ImageRotation::None,
                 auto_range: true,
                 manual_range: TempRange::new(
                     Temp::from_unit(TemperatureUnit::Celsius, 0.0),

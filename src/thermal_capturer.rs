@@ -15,8 +15,9 @@ use crate::{
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
     temperature::{Temp, TempRange},
-    thermal_data::{ThermalDataHistogram, ThermalDataRotation},
+    thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
+    types::image_rotation::ImageRotation,
 };
 
 pub struct ThermalCapturerResult {
@@ -34,7 +35,7 @@ pub struct ThermalCapturerSettings {
     pub auto_range: bool,
     pub manual_range: TempRange,
     pub gradient: ThermalGradient,
-    pub rotation: ThermalDataRotation,
+    pub rotation: ImageRotation,
     pub gizmo: Gizmo,
     pub dynamic_range_curve: DynamicRangeCurve,
 }

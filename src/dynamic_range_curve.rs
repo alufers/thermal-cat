@@ -10,7 +10,8 @@ use egui_plot::{Line, MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, PlotP
 use crate::{
     temperature::{TempRange, TemperatureUnit},
     thermal_capturer::ThermalCapturerSettings,
-    util::{rotate_image, ImageRotation},
+    types::image_rotation::ImageRotation,
+    util::rotate_image,
 };
 
 #[derive(Clone, Debug, PartialEq)]

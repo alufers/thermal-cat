@@ -1,12 +1,5 @@
+use crate::types::image_rotation::ImageRotation;
 use eframe::epaint::{Color32, ColorImage};
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ImageRotation {
-    None,
-    Clockwise90,
-    Clockwise180,
-    Clockwise270,
-}
 
 pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
     if rotation == ImageRotation::None {

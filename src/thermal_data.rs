@@ -1,14 +1,9 @@
 use eframe::epaint::{Color32, ColorImage};
 
-use crate::temperature::{Temp, TempRange};
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ThermalDataRotation {
-    None,
-    Clockwise90,
-    Clockwise180,
-    Clockwise270,
-}
+use crate::{
+    temperature::{Temp, TempRange},
+    types::image_rotation::ImageRotation,
+};
 
 #[derive(Clone)]
 pub struct ThermalData {
@@ -83,15 +78,15 @@ impl ThermalData {
         (min_pos, max_pos)
     }
 
-    pub fn rotated(&self, rotation: ThermalDataRotation) -> Self {
-        if rotation == ThermalDataRotation::None {
+    pub fn rotated(&self, rotation: ImageRotation) -> Self {
+        if rotation == ImageRotation::None {
             return self.clone();
         }
         let (width, height) = match rotation {
-            ThermalDataRotation::None => (self.width, self.height),
-            ThermalDataRotation::Clockwise90 => (self.height, self.width),
-            ThermalDataRotation::Clockwise180 => (self.width, self.height),
-            ThermalDataRotation::Clockwise270 => (self.height, self.width),
+            ImageRotation::None => (self.width, self.height),
+            ImageRotation::Clockwise90 => (self.height, self.width),
+            ImageRotation::Clockwise180 => (self.width, self.height),
+            ImageRotation::Clockwise270 => (self.height, self.width),
         };
 
         let mut data: Vec<Temp> = vec![Temp::new(0.0); width * height];
@@ -99,10 +94,10 @@ impl ThermalData {
             let x = i % self.width;
             let y = i / self.width;
             let (x, y) = match rotation {
-                ThermalDataRotation::None => (x, y),
-                ThermalDataRotation::Clockwise90 => (y, self.width - x - 1),
-                ThermalDataRotation::Clockwise180 => (self.width - x - 1, self.height - y - 1),
-                ThermalDataRotation::Clockwise270 => (self.height - y - 1, x),
+                ImageRotation::None => (x, y),
+                ImageRotation::Clockwise90 => (y, self.width - x - 1),
+                ImageRotation::Clockwise180 => (self.width - x - 1, self.height - y - 1),
+                ImageRotation::Clockwise270 => (self.height - y - 1, x),
             };
             data[y * width + x] = *pixel;
         }

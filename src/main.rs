@@ -83,10 +83,14 @@ pub struct AppGlobalState {
 
     thermal_capturer_inst: Option<ThermalCapturer>,
     thermal_capturer_settings: ThermalCapturerSettings,
-    prefs: Option<UserPreferences>,
     last_thermal_capturer_result: Option<Box<ThermalCapturerResult>>,
+
     hotplug_detector: Option<HotplugDetector>,
     history_data_collector: HistoryDataCollector,
+
+    prefs: Option<UserPreferences>,
+
+    is_thermal_view_maximized: bool,
 }
 
 impl AppGlobalState {
@@ -165,6 +169,7 @@ impl Default for ThermalViewerApp {
             last_thermal_capturer_result: None,
             hotplug_detector: None,
             history_data_collector: HistoryDataCollector::new(),
+            is_thermal_view_maximized: false,
         };
 
         ThermalViewerApp {
@@ -263,9 +268,24 @@ impl eframe::App for ThermalViewerApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            DockArea::new(&mut self.dock_state)
-                .style(egui_dock::Style::from_egui(ui.style().as_ref()))
-                .show_inside(ui, &mut PaneDispatcher {});
+            // Either render the thermal view maximized, or render the egui_dock layout
+            if self.global_state.borrow().is_thermal_view_maximized {
+                self.dock_state.iter_all_tabs_mut().for_each(|tab| {
+                    let pane = tab.1;
+
+                    // Super shit code, but I couldn't find any better way of doing it
+                    // This is because we don't control the Pane trait from egui_dock, so there is no
+                    // way to try to downcast it to a concrete type
+                    // See: https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object
+                    if pane.title().text() == "Thermal Display" {
+                        pane.ui(ui);
+                    }
+                });
+            } else {
+                DockArea::new(&mut self.dock_state)
+                    .style(egui_dock::Style::from_egui(ui.style().as_ref()))
+                    .show_inside(ui, &mut PaneDispatcher {});
+            }
         });
     }
 }

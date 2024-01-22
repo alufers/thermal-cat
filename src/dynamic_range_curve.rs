@@ -347,7 +347,7 @@ pub fn dynamic_curve_editor(
                                 || curve
                                     .points
                                     .get(drag_idx + 1)
-                                    .map(|f| new_pos.x > f.x() )
+                                    .map(|f| new_pos.x > f.x())
                                     .unwrap_or_default();
                             if !exceeds_other_points {
                                 curve.points[drag_idx].set_pos(new_pos);

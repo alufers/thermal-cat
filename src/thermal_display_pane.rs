@@ -4,7 +4,8 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
+        Button, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
+        Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -43,7 +44,7 @@ impl ThermalDisplayPane {
         }
     }
 
-    fn build_toolbar_ui(&mut self, ui: &mut egui::Ui) {
+    fn build_toolbar_ui(&mut self, ui: &mut egui::Ui, global_state: &mut AppGlobalState) {
         ui.with_layout(
             Layout::left_to_right(egui::Align::Min)
                 .with_main_align(egui::Align::Min)
@@ -68,6 +69,31 @@ impl ThermalDisplayPane {
                     self.external_zoom_factor_changed = true;
                     self.zoom_to_fit = false;
                 }
+
+                ui.with_layout(
+                    Layout::right_to_left(egui::Align::Min).with_main_align(egui::Align::Max),
+                    |ui| {
+                        if ui
+                            .add_enabled(
+                                global_state.thermal_capturer_inst.is_some(),
+                                Button::image(
+                                    Image::new(egui::include_image!("./icons/maximize.svg"))
+                                        .max_height(16.0),
+                                )
+                                .frame(false)
+                                .selected(global_state.is_thermal_view_maximized),
+                            )
+                            .clicked()
+                        {
+                            global_state.is_thermal_view_maximized =
+                                !global_state.is_thermal_view_maximized;
+                        }
+
+                        if global_state.thermal_capturer_inst.is_none() {
+                            global_state.is_thermal_view_maximized = false;
+                        }
+                    },
+                );
             },
         );
     }
@@ -121,7 +147,7 @@ impl Pane for ThermalDisplayPane {
                 }
             }
             ui.vertical(|ui| {
-                self.build_toolbar_ui(ui);
+                self.build_toolbar_ui(ui, &mut global_state);
                 if let Some(texture) = self.camera_texture.as_ref() {
                     let img_size = self.camera_image_size.unwrap();
 

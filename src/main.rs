@@ -68,7 +68,7 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
     eframe::run_native(
-        "Open Desktop Thermal Viewer",
+        "Thermal Cat",
         options,
         Box::new(|cc| {
             // This gives us image support:

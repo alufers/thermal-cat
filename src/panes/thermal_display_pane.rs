@@ -3,8 +3,8 @@ use std::{cell::RefCell, rc::Rc};
 use eframe::{
     egui::{
         self,
-        load::{TextureLoadResult, TexturePoll}, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
-        Widget,
+        load::{TextureLoadResult, TexturePoll},
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -50,7 +50,7 @@ impl ThermalDisplayPane {
                 .with_main_align(egui::Align::Min)
                 .with_main_justify(false),
             |ui| {
-                Image::new(egui::include_image!("./icons/zoom-in.svg"))
+                Image::new(egui::include_image!("../icons/zoom-in.svg"))
                     .max_height(16.0)
                     .max_width(16.0)
                     .tint(ui.style().visuals.widgets.active.fg_stroke.color)
@@ -78,7 +78,7 @@ impl ThermalDisplayPane {
                                 global_state.thermal_capturer_inst.is_some(),
                                 SelectableImageLabel::new(
                                     global_state.is_thermal_view_maximized,
-                                    Image::new(egui::include_image!("./icons/maximize.svg"))
+                                    Image::new(egui::include_image!("../icons/maximize.svg"))
                                         .max_height(14.0),
                                 ),
                             )
@@ -127,7 +127,7 @@ impl Pane for ThermalDisplayPane {
                 .clone();
 
             self.crosshair_texture_load_result.get_or_insert_with(|| {
-                egui::include_image!("./icons/crosshair_center.svg").load(
+                egui::include_image!("../icons/crosshair_center.svg").load(
                     ui.ctx(),
                     TextureOptions::default(),
                     SizeHint::Scale(5.0.into()),

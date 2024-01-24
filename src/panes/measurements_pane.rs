@@ -58,12 +58,12 @@ impl Pane for MeasurementsPane {
                     .iter_mut()
                     .for_each(|gizmo| {
                         let icon = Image::new(match gizmo.kind {
-                            GizmoKind::MaxTemp => egui::include_image!("./icons/flame.svg"),
-                            GizmoKind::MinTemp => egui::include_image!("./icons/snowflake.svg"),
+                            GizmoKind::MaxTemp => egui::include_image!("../icons/flame.svg"),
+                            GizmoKind::MinTemp => egui::include_image!("../icons/snowflake.svg"),
                             GizmoKind::TempAt { pos: _ } => {
-                                egui::include_image!("./icons/crosshair_center.svg")
+                                egui::include_image!("../icons/crosshair_center.svg")
                             }
-                            _ => egui::include_image!("./icons/flame.svg"),
+                            _ => egui::include_image!("../icons/flame.svg"),
                         });
 
                         color_icon_rgb(
@@ -103,7 +103,7 @@ impl Pane for MeasurementsPane {
                                 if ui
                                     .add(
                                         ImageButton::new(
-                                            Image::new(egui::include_image!("./icons/trash.svg"))
+                                            Image::new(egui::include_image!("../icons/trash.svg"))
                                                 .tint(
                                                     ui.style()
                                                         .visuals
@@ -125,7 +125,7 @@ impl Pane for MeasurementsPane {
                         if ui
                             .add(
                                 ImageButton::new(
-                                    Image::new(egui::include_image!("./icons/type.svg")).tint(
+                                    Image::new(egui::include_image!("../icons/type.svg")).tint(
                                         if gizmo.show_temperature_label {
                                             ui.style().visuals.widgets.active.fg_stroke.color
                                         } else {

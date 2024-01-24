@@ -7,12 +7,10 @@ use chart_pane::ChartPane;
 use dynamic_range_curve::DynamicRangeCurve;
 use egui_dock::{DockArea, DockState, NodeIndex};
 use gizmos::{Gizmo, GizmoKind};
-use histogram_pane::HistogramPane;
 use history_data_collector::HistoryDataCollector;
 use hotplug_detector::{run_hotplug_detector, HotplugDetector};
 use log::error;
 
-use measurements_pane::MeasurementsPane;
 use nokhwa::native_api_backend;
 
 use eframe::{
@@ -21,10 +19,12 @@ use eframe::{
     icon_data,
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
-use setup_pane::SetupPane;
+use panes::{
+    histogram_pane::HistogramPane, measurements_pane::MeasurementsPane, setup_pane::SetupPane,
+    thermal_display_pane::ThermalDisplayPane,
+};
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
-use thermal_display_pane::ThermalDisplayPane;
 use types::image_rotation::ImageRotation;
 use user_preferences::UserPreferences;
 use user_preferences_window::UserPreferencesWindow;
@@ -36,17 +36,14 @@ mod chart_pane;
 mod dynamic_range_curve;
 mod gizmos;
 mod gradient_selector_widget;
-mod histogram_pane;
 mod history_data_collector;
 mod hotplug_detector;
-mod measurements_pane;
 mod pane_dispatcher;
-mod setup_pane;
+mod panes;
 mod temperature;
 mod temperature_edit_field;
 mod thermal_capturer;
 mod thermal_data;
-mod thermal_display_pane;
 mod thermal_gradient;
 mod types;
 mod user_preferences;

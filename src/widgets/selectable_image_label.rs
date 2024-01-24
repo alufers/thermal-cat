@@ -4,7 +4,7 @@ use eframe::{
         paint_texture_at, Image, ImageOptions, Rect, Response, Sense, Spinner, TextStyle, Ui,
         Widget, WidgetInfo, WidgetType,
     },
-    emath::{Align2},
+    emath::Align2,
     epaint::Vec2,
 };
 

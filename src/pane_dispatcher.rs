@@ -3,6 +3,9 @@ use eframe::egui;
 pub trait Pane {
     fn title(&self) -> egui::WidgetText;
     fn ui(&mut self, ui: &mut egui::Ui);
+    fn force_close(&mut self) -> bool {
+        false
+    }
 }
 
 pub struct PaneDispatcher {}
@@ -22,5 +25,9 @@ impl egui_dock::TabViewer for PaneDispatcher {
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         tab.ui(ui);
+    }
+
+    fn force_close(&mut self, tab: &mut Self::Tab) -> bool {
+        tab.force_close()
     }
 }

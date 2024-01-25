@@ -21,13 +21,12 @@ use eframe::{
 use pane_dispatcher::{Pane, PaneDispatcher};
 use panes::{
     histogram_pane::HistogramPane, measurements_pane::MeasurementsPane, setup_pane::SetupPane,
-    thermal_display_pane::ThermalDisplayPane,
+    thermal_display_pane::ThermalDisplayPane, user_preferences_pane::UserPreferencesPane,
 };
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
 use types::image_rotation::ImageRotation;
 use user_preferences::UserPreferences;
-use user_preferences_window::UserPreferencesWindow;
 
 mod auto_display_range_controller;
 mod camera_adapter;
@@ -47,7 +46,6 @@ mod thermal_data;
 mod thermal_gradient;
 mod types;
 mod user_preferences;
-mod user_preferences_window;
 mod util;
 mod widgets;
 
@@ -106,7 +104,6 @@ struct ThermalViewerApp {
 
     dock_state: DockState<Box<dyn Pane>>,
 
-    user_preferences_window: UserPreferencesWindow,
     global_state: Rc<RefCell<AppGlobalState>>,
 }
 
@@ -176,8 +173,6 @@ impl Default for ThermalViewerApp {
             dock_state: DockState::new(vec![]),
 
             did_init: false,
-
-            user_preferences_window: UserPreferencesWindow::new(),
             global_state: Rc::new(RefCell::new(global_state)),
         }
     }
@@ -243,15 +238,15 @@ impl eframe::App for ThermalViewerApp {
             } {}
         }
 
-        self.user_preferences_window
-            .draw(ctx, self.global_state.borrow_mut().prefs.as_mut().unwrap());
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Preferences").clicked() {
-                        self.user_preferences_window
-                            .show(self.global_state.borrow_mut().prefs.as_mut().unwrap());
+                        // TODO: forbid opening multiple user preferences windows
+                        self.dock_state
+                            .add_window(vec![Box::new(UserPreferencesPane::new(
+                                self.global_state.clone(),
+                            ))]);
                     }
                     ui.separator();
                     if ui.button("Quit").clicked() {

@@ -4,7 +4,8 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider,
+        TextureOptions, Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -71,6 +72,42 @@ impl ThermalDisplayPane {
                 {
                     self.external_zoom_factor_changed = true;
                     self.zoom_to_fit = false;
+                }
+
+                ui.add_space(8.0);
+
+                if ui
+                    .add(SelectableImageLabel::new(
+                        false,
+                        Image::new(egui::include_image!("../icons/rotate-ccw.svg"))
+                            .max_height(14.0)
+                            .tint(ui.style().visuals.widgets.active.fg_stroke.color),
+                    ))
+                    .clicked()
+                {
+                    global_state.thermal_capturer_settings.rotation =
+                        global_state.thermal_capturer_settings.rotation.next();
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.set_settings(settings_clone);
+                    }
+                }
+
+                if ui
+                    .add(SelectableImageLabel::new(
+                        false,
+                        Image::new(egui::include_image!("../icons/rotate-cw.svg"))
+                            .max_height(14.0)
+                            .tint(ui.style().visuals.widgets.active.fg_stroke.color),
+                    ))
+                    .clicked()
+                {
+                    global_state.thermal_capturer_settings.rotation =
+                        global_state.thermal_capturer_settings.rotation.prev();
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.set_settings(settings_clone);
+                    }
                 }
 
                 ui.with_layout(

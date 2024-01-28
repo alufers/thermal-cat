@@ -6,9 +6,16 @@ pub trait Pane {
     fn force_close(&mut self) -> bool {
         false
     }
+
+    // If set to true, the pane will be rendered in maximized mode, hiding all other panes.
+    fn is_maximized(&self) -> bool {
+        false
+    }
 }
 
 pub struct PaneDispatcher {}
+
+impl PaneDispatcher {}
 
 ///
 /// Adapter from egui_dock::TabViewer to Pane

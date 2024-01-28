@@ -86,8 +86,6 @@ pub struct AppGlobalState {
     history_data_collector: HistoryDataCollector,
 
     prefs: Option<UserPreferences>,
-
-    is_thermal_view_maximized: bool,
 }
 
 impl AppGlobalState {
@@ -109,7 +107,6 @@ struct ThermalViewerApp {
 
 impl ThermalViewerApp {
     fn set_default_dock_state(&mut self) {
-        self.global_state.borrow_mut().is_thermal_view_maximized = false;
         self.dock_state = DockState::new(vec![Box::new(ThermalDisplayPane::new(
             self.global_state.clone(),
         ))]);
@@ -166,7 +163,6 @@ impl Default for ThermalViewerApp {
             last_thermal_capturer_result: None,
             hotplug_detector: None,
             history_data_collector: HistoryDataCollector::new(),
-            is_thermal_view_maximized: false,
         };
 
         ThermalViewerApp {
@@ -263,19 +259,14 @@ impl eframe::App for ThermalViewerApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Either render the thermal view maximized, or render the egui_dock layout
-            if self.global_state.borrow().is_thermal_view_maximized {
-                self.dock_state.iter_all_tabs_mut().for_each(|tab| {
-                    let pane = tab.1;
+            // Either render a tab maximized, or render the egui_dock layout
+            let fulscreen_tab = self
+                .dock_state
+                .iter_all_tabs_mut()
+                .find(|tab| tab.1.is_maximized());
 
-                    // Super shit code, but I couldn't find any better way of doing it
-                    // This is because we don't control the Pane trait from egui_dock, so there is no
-                    // way to try to downcast it to a concrete type
-                    // See: https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object
-                    if pane.title().text() == "Thermal Display" {
-                        pane.ui(ui);
-                    }
-                });
+            if let Some(tab) = fulscreen_tab {
+                tab.1.ui(ui);
             } else {
                 DockArea::new(&mut self.dock_state)
                     .style(egui_dock::Style::from_egui(ui.style().as_ref()))

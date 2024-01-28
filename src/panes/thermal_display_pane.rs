@@ -28,6 +28,8 @@ pub struct ThermalDisplayPane {
     zoom_to_fit: bool,
     external_zoom_factor: f64,
     external_zoom_factor_changed: bool,
+
+    maximized: bool,
 }
 
 impl ThermalDisplayPane {
@@ -41,6 +43,7 @@ impl ThermalDisplayPane {
             zoom_to_fit: true,
             external_zoom_factor: 1.0,
             external_zoom_factor_changed: false,
+            maximized: false,
         }
     }
 
@@ -77,19 +80,18 @@ impl ThermalDisplayPane {
                             .add_enabled(
                                 global_state.thermal_capturer_inst.is_some(),
                                 SelectableImageLabel::new(
-                                    global_state.is_thermal_view_maximized,
+                                    self.maximized,
                                     Image::new(egui::include_image!("../icons/maximize.svg"))
                                         .max_height(14.0),
                                 ),
                             )
                             .clicked()
                         {
-                            global_state.is_thermal_view_maximized =
-                                !global_state.is_thermal_view_maximized;
+                            self.maximized = !self.maximized;
                         }
 
                         if global_state.thermal_capturer_inst.is_none() {
-                            global_state.is_thermal_view_maximized = false;
+                            self.maximized = false;
                         }
                     },
                 );
@@ -349,6 +351,10 @@ impl Pane for ThermalDisplayPane {
                 }
             });
         });
+    }
+
+    fn is_maximized(&self) -> bool {
+        self.maximized
     }
 }
 

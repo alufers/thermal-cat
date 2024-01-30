@@ -25,7 +25,7 @@ regex = "1.10.3"
 rusb = "0.9.3"
 serde = "1.0.195"
 serde_json = "1.0.111"
-strum = "0.25.0"
+strum = "0.26.1"
 strum_macros = "0.26.1"
 
 

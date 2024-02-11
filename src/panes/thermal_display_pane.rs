@@ -4,8 +4,7 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider,
-        TextureOptions, Ui, Widget,
+        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -347,7 +346,8 @@ impl Pane for ThermalDisplayPane {
                                     // try to get zoom delta from 3 different sources
                                     let zoom_delta_from_multitouch =
                                         inp.multi_touch().map(|touch| touch.zoom_delta);
-                                    let zoom_delta_from_scroll = (inp.scroll_delta.y / 200.0).exp();
+                                    let zoom_delta_from_scroll =
+                                        (inp.smooth_scroll_delta.y / 200.0).exp();
 
                                     let zoom_delta_from_zoom = inp
                                         .raw

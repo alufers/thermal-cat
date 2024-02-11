@@ -81,11 +81,11 @@ impl Pane for ChartPane {
                 "Temperature ({})",
                 global_state.preferred_temperature_unit().suffix()
             ))
-            .y_axis_formatter(move |temp_val, _max_chars, _range| {
-                format!("{:.0} {}", temp_val, unit_suffix)
+            .y_axis_formatter(move |grid_mark, _max_chars, _range| {
+                format!("{:.0} {}", grid_mark.value, unit_suffix)
             })
-            .x_axis_formatter(move |time_val, _max_chars, _range| {
-                let dur = Duration::from_secs_f64(time_val.abs());
+            .x_axis_formatter(move |grid_mark, _max_chars, _range| {
+                let dur = Duration::from_secs_f64(grid_mark.value.abs());
                 ChartPane::duration_to_string(dur)
             })
             .label_formatter(move |lbl: &str, p| {
@@ -129,7 +129,7 @@ impl Pane for ChartPane {
             });
 
         if plot_ret.response.hovered() {
-            let scroll_delta_y = ui.input(|i: &egui::InputState| i.scroll_delta.y);
+            let scroll_delta_y = ui.input(|i: &egui::InputState| i.smooth_scroll_delta.y);
             if scroll_delta_y != 0.0 {
                 let duration_secs = self.display_duration.as_secs() as f64;
                 let new_duration_secs: f64 = duration_secs - (scroll_delta_y as f64 / 3.0);

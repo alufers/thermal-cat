@@ -259,10 +259,12 @@ pub fn dynamic_curve_editor(
         .height(250.0)
         // .data_aspect(1.0)
         // .view_aspect(1.0)
-        .x_axis_formatter(move |x, _, _| {
+        .x_axis_formatter(move |grid_mark, _, _| {
             format!(
                 "{:.0} {}",
-                current_range.factor_to_temp(x as f32).to_unit(unit),
+                current_range
+                    .factor_to_temp(grid_mark.value as f32)
+                    .to_unit(unit),
                 unit.suffix()
             )
         })
@@ -322,7 +324,7 @@ pub fn dynamic_curve_editor(
                     .ctx()
                     .output_mut(|out| out.cursor_icon = CursorIcon::Grab);
             }
-            if plot_ui.response().drag_started() {
+            if plot_ui.response().drag_started() || plot_ui.response().clicked() {
                 // create a new point if we're not hovering over an existing one
                 state.dragged_point_idx = hovered_point_idx.or_else(|| {
                     plot_ui.pointer_coordinate().map(|pointer_pos| {

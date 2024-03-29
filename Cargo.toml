@@ -9,7 +9,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.81"
 dirs = "5.0.1"
-eframe = { version = "0.26.2", features = ["wgpu"] }
+eframe = { version = "0.27.1", features = ["wgpu"] }
 egui_dock = "0.11.4"
 egui_extras = { version = "0.26.2", features = ["svg"] }
 egui_plot = "0.26.2"

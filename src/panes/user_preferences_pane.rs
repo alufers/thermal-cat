@@ -65,6 +65,10 @@ impl Pane for UserPreferencesPane {
                     ui.label("Show unsupported cameras");
                     ui.checkbox(&mut edited_prefs.show_unsupported_cameras, "");
                     ui.end_row();
+
+                    ui.label("Captures directory");
+                    ui.text_edit_singleline(&mut edited_prefs.captures_directory);
+                    ui.end_row();
                 });
 
             ui.add_space(10.0);

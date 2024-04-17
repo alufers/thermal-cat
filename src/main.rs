@@ -20,8 +20,9 @@ use eframe::{
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
 use panes::{
-    histogram_pane::HistogramPane, measurements_pane::MeasurementsPane, setup_pane::SetupPane,
-    thermal_display_pane::ThermalDisplayPane, user_preferences_pane::UserPreferencesPane,
+    capture_pane::CapturePane, histogram_pane::HistogramPane, measurements_pane::MeasurementsPane,
+    setup_pane::SetupPane, thermal_display_pane::ThermalDisplayPane,
+    user_preferences_pane::UserPreferencesPane,
 };
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
@@ -127,6 +128,11 @@ impl ThermalViewerApp {
 
         self.dock_state.main_surface_mut().split_below(
             left,
+            0.5,
+            vec![Box::new(CapturePane::new(self.global_state.clone()))],
+        );
+        self.dock_state.main_surface_mut().split_below(
+            left,
             0.7,
             vec![Box::new(MeasurementsPane::new(self.global_state.clone()))],
         );
@@ -182,7 +188,13 @@ impl eframe::App for ThermalViewerApp {
             let mut borrowed_global_state = self.global_state.borrow_mut();
             borrowed_global_state.prefs = Some(
                 UserPreferences::load()
-                    .inspect_err(|err| error!("Failed to load user preferences: {}", err))
+                    .inspect_err(|err| {
+                        error!(
+                            "Failed to load user preferences from {}: {}",
+                            UserPreferences::preferences_path().to_string_lossy().to_string(),
+                            err
+                        )
+                    })
                     .unwrap_or_default(),
             );
             let cloned_ctx = ctx.clone();

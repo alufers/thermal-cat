@@ -16,6 +16,11 @@ pub trait CameraAdapter: Send + Sync {
     fn name(&self) -> String;
 
     ///
+    /// Shorter name of the camera model for use in filenames
+    /// 
+    fn short_name(&self) -> String;
+
+    ///
     /// Get the USB PID/VID of the camera to match against
     ///
     fn usb_vid_pid(&self) -> (u16, u16);

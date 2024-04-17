@@ -29,6 +29,10 @@ impl CameraAdapter for InfirayP2ProAdapter {
         "Infiray P2 Pro".to_string()
     }
 
+    fn short_name(&self) -> String {
+        "P2 Pro".to_string()
+    }
+
     fn requested_format(&self) -> nokhwa::utils::RequestedFormat<'static> {
         RequestedFormat::new::<RgbFormat>(RequestedFormatType::Closest(CameraFormat::new(
             Resolution::new(IMAGE_WIDTH, IMAGE_HEIGHT * 2),

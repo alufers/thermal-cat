@@ -1,10 +1,12 @@
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{mpsc, Arc},
     thread,
 };
 
 use anyhow::{anyhow, Error};
+use chrono::{DateTime, Local};
 use eframe::epaint::{Color32, ColorImage};
 use nokhwa::Camera;
 use uuid::Uuid;
@@ -18,6 +20,7 @@ use crate::{
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
     types::image_rotation::ImageRotation,
+    util::pathify_string,
 };
 
 pub struct ThermalCapturerResult {
@@ -40,6 +43,11 @@ pub struct ThermalCapturerSettings {
     pub dynamic_range_curve: DynamicRangeCurve,
 }
 
+#[derive(Clone)]
+pub struct SnapshotSettings {
+    pub dir_path: PathBuf,
+}
+
 impl ThermalCapturerSettings {
     //
     // Returns the color corresponding to the given temperature,
@@ -58,6 +66,7 @@ pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
+    TakeSnapshot(SnapshotSettings),
     Stop,
 }
 
@@ -70,6 +79,8 @@ struct ThermalCapturerCtx {
     settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
     last_frame_time: std::time::Instant,
+
+    shaduled_snapshot_settings: Option<SnapshotSettings>,
 }
 
 pub struct ThermalCapturer {
@@ -101,6 +112,7 @@ impl ThermalCapturer {
                 settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
                 last_frame_time: std::time::Instant::now(),
+                shaduled_snapshot_settings: None,
             }),
             cmd_sender,
             result_receiver,
@@ -181,6 +193,27 @@ impl ThermalCapturer {
                         _ => panic!("Unimplemented gizmo kind"),
                     });
 
+                if let Some(snapshot_settings) = ctx.shaduled_snapshot_settings.take() {
+                    let dir_path = snapshot_settings.dir_path;
+                    std::fs::create_dir_all(dir_path.clone())?;
+                    let current_local: DateTime<Local> = Local::now();
+
+                    let filename = format!(
+                        "{}_{}_{}.png",
+                        ctx.adapter.short_name(),
+                        current_local.format("%Y-%m-%d_%H-%M-%S"),
+                        Uuid::new_v4()
+                    );
+                    image::save_buffer(
+                        dir_path.join(PathBuf::from(filename)),
+                        image.as_raw(),
+                        image.width() as u32,
+                        image.height() as u32,
+                        image::ColorType::Rgba8,
+                    )?;
+                    ctx.shaduled_snapshot_settings = None;
+                }
+
                 Ok(Box::new(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / ctx.last_frame_time.elapsed().as_secs_f32(),
@@ -214,6 +247,9 @@ impl ThermalCapturer {
                         ThermalCapturerCmd::SetSettings(range_settings) => {
                             ctx.settings = range_settings;
                         }
+                        ThermalCapturerCmd::TakeSnapshot(snapshot_settings) => {
+                            ctx.shaduled_snapshot_settings = Some(snapshot_settings);
+                        }
                     }
                 }
             }
@@ -222,6 +258,12 @@ impl ThermalCapturer {
     pub fn set_settings(&mut self, settings: ThermalCapturerSettings) {
         self.cmd_sender
             .send(ThermalCapturerCmd::SetSettings(settings))
+            .unwrap();
+    }
+
+    pub fn take_snapshot(&mut self, settings: SnapshotSettings) {
+        self.cmd_sender
+            .send(ThermalCapturerCmd::TakeSnapshot(settings))
             .unwrap();
     }
 }

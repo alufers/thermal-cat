@@ -36,3 +36,11 @@ pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
     }
     new_img
 }
+
+
+pub fn pathify_string(s: String) -> String {
+    s.to_lowercase().chars().map(|c| match c {
+        'a'..='z' | '0'..='9' => c,
+        _ => '_',
+    }).collect()
+}

@@ -30,6 +30,7 @@ cargo run
 - [ ] Line measurement
 - [ ] Triggering camera calibration
 - [ ] Proper macOS support
+- [ ] Android port
 
 While this project might seem stalled for the time being, I am actively working on a customized UVC driver for the camera in a separate project (private for now). It will enable me to send custom commands to the camera which trigger the calibration. Also it will fix macOS support, because the default macOS driver seems to be converting YUV422 data from the camera to a different color format, which unfortunately adds some nasty artifacts to the temperature data. 
 

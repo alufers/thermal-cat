@@ -24,7 +24,7 @@ cargo run
 - [x] Histogram of temperatures in frame
 - [x] Chart of marker temperature vs. time
 - [x] Celcius/Fahrenheit switching
-- [ ] Capturing images
+- [x] Capturing images
 - [ ] Capturing video
 - [ ] Area measurement
 - [ ] Line measurement

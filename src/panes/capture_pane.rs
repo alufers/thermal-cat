@@ -1,15 +1,11 @@
 use std::{
     cell::RefCell,
-    collections::{VecDeque},
+    collections::VecDeque,
     path::{Path, PathBuf},
     rc::Rc,
 };
 
-use eframe::{
-    egui::{
-        self, scroll_area::ScrollBarVisibility, Align, Button, Image, Layout, Vec2,
-    },
-};
+use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Button, Image, Layout, Vec2};
 
 use crate::{
     pane_dispatcher::Pane,
@@ -116,7 +112,7 @@ impl Pane for CapturePane {
             .show(ui, |ui| {
                 ui.vertical_centered(|ui| {
                     for elem in &global_state.gallery {
-                        let base_name = elem.path.file_stem().unwrap().to_string_lossy();
+                        let base_name = elem.path.file_name().unwrap().to_string_lossy();
 
                         ui.add(
                             Image::new("file://".to_string() + elem.path.to_str().unwrap())

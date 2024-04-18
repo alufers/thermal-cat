@@ -7,22 +7,22 @@ use strum_macros::EnumIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, EnumIter)]
 pub enum ImageFormat {
-    JPEG,
-    PNG,
+    Jpeg,
+    Png,
 }
 
 impl ImageFormat {
     pub fn extension(&self) -> &'static str {
         match self {
-            ImageFormat::JPEG => "jpeg",
-            ImageFormat::PNG => "png",
+            ImageFormat::Jpeg => "jpeg",
+            ImageFormat::Png => "png",
         }
     }
 
     pub fn name(&self) -> &'static str {
         match self {
-            ImageFormat::JPEG => "JPEG",
-            ImageFormat::PNG => "PNG",
+            ImageFormat::Jpeg => "JPEG",
+            ImageFormat::Png => "PNG",
         }
     }
 

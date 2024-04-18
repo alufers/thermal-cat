@@ -1,23 +1,18 @@
 use std::{
-    arch::global_asm,
     cell::RefCell,
-    collections::{LinkedList, VecDeque},
+    collections::{VecDeque},
     path::{Path, PathBuf},
     rc::Rc,
 };
 
 use eframe::{
     egui::{
-        self, scroll_area::ScrollBarVisibility, Align, Button, Grid, Image, Layout, Separator, Vec2,
+        self, scroll_area::ScrollBarVisibility, Align, Button, Image, Layout, Vec2,
     },
-    emath::Vec2b,
-    epaint::Color32,
 };
-use egui_plot::{Bar, BarChart, Plot, VLine};
 
 use crate::{
     pane_dispatcher::Pane,
-    temperature::TemperatureUnit,
     thermal_capturer::SnapshotSettings,
     types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
     AppGlobalState,
@@ -39,7 +34,7 @@ impl CapturePane {
     pub fn new(global_state: Rc<RefCell<AppGlobalState>>) -> CapturePane {
         CapturePane {
             global_state,
-            snapshot_format: ImageFormat::PNG,
+            snapshot_format: ImageFormat::Png,
             video_format: VideoFormat::MP4_H264,
         }
     }
@@ -124,7 +119,7 @@ impl Pane for CapturePane {
                         let base_name = elem.path.file_stem().unwrap().to_string_lossy();
 
                         ui.add(
-                            Image::new("file://".to_string() + &elem.path.to_str().unwrap())
+                            Image::new("file://".to_string() + elem.path.to_str().unwrap())
                                 .fit_to_exact_size(Vec2::new(150.0, 100.0))
                                 .maintain_aspect_ratio(true),
                         );
@@ -185,7 +180,7 @@ impl CapturePane {
 
         global_state.gallery = VecDeque::with_capacity(20);
         for item in last_items {
-            global_state.gallery.push_back((item.clone()));
+            global_state.gallery.push_back(item.clone());
         }
 
         Ok(())

@@ -3,7 +3,7 @@
 
 use std::{
     cell::RefCell,
-    collections::{LinkedList, VecDeque},
+    collections::{VecDeque},
     rc::Rc,
     time::SystemTime,
 };
@@ -250,7 +250,7 @@ impl eframe::App for ThermalViewerApp {
                                     .unwrap();
                                 // Add image to gallery if needed
                                 if let Some(saved_file) =
-                                    result.created_capture_file.as_ref().map(|p| p.clone())
+                                    result.created_capture_file.clone()
                                 {
                                     borrowed_global_state.gallery.push_front(GalleryElement {
                                         path: saved_file,

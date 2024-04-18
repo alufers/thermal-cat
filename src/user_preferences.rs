@@ -91,7 +91,7 @@ impl UserPreferences {
         let path = Self::preferences_path();
         let dir_path = path.parent().unwrap();
         if !dir_path.exists() {
-            fs::create_dir_all(&dir_path)?;
+            fs::create_dir_all(dir_path)?;
         }
 
         let file = File::create(path)?;

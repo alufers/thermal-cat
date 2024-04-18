@@ -17,7 +17,7 @@ pub trait CameraAdapter: Send + Sync {
 
     ///
     /// Shorter name of the camera model for use in filenames
-    /// 
+    ///
     fn short_name(&self) -> String;
 
     ///

@@ -8,6 +8,7 @@ use std::{
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, Local};
 use eframe::epaint::{Color32, ColorImage};
+use image::RgbImage;
 use nokhwa::Camera;
 use uuid::Uuid;
 
@@ -19,8 +20,8 @@ use crate::{
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
-    types::image_rotation::ImageRotation,
-    util::pathify_string,
+    types::{image_rotation::ImageRotation, media_formats::ImageFormat},
+    util::{pathify_string, rgba8_to_rgb8},
 };
 
 pub struct ThermalCapturerResult {
@@ -31,6 +32,8 @@ pub struct ThermalCapturerResult {
     pub histogram: ThermalDataHistogram,
     pub gizmo_results: HashMap<Uuid, GizmoResult>,
     pub capture_time: std::time::Instant,
+
+    pub created_capture_file: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -46,6 +49,7 @@ pub struct ThermalCapturerSettings {
 #[derive(Clone)]
 pub struct SnapshotSettings {
     pub dir_path: PathBuf,
+    pub image_format: ImageFormat,
 }
 
 impl ThermalCapturerSettings {
@@ -193,25 +197,32 @@ impl ThermalCapturer {
                         _ => panic!("Unimplemented gizmo kind"),
                     });
 
+                let mut created_capture_file = None;
                 if let Some(snapshot_settings) = ctx.shaduled_snapshot_settings.take() {
                     let dir_path = snapshot_settings.dir_path;
                     std::fs::create_dir_all(dir_path.clone())?;
                     let current_local: DateTime<Local> = Local::now();
 
                     let filename = format!(
-                        "{}_{}_{}.png",
-                        ctx.adapter.short_name(),
+                        "{}_{}.{}",
+                        pathify_string(ctx.adapter.short_name()),
                         current_local.format("%Y-%m-%d_%H-%M-%S"),
-                        Uuid::new_v4()
+                        snapshot_settings.image_format.extension()
                     );
-                    image::save_buffer(
-                        dir_path.join(PathBuf::from(filename)),
-                        image.as_raw(),
+                    let img = image::RgbaImage::from_raw(
                         image.width() as u32,
                         image.height() as u32,
-                        image::ColorType::Rgba8,
-                    )?;
+                        image.as_raw().into(),
+                    )
+                    .ok_or(anyhow!("Failed to create image when saving snapshot"))?;
+
+                    // Convert to Rgb8, we don't need the alpha channel
+                    let img: RgbImage = rgba8_to_rgb8(img);
+
+                    let save_path = dir_path.join(PathBuf::from(filename));
+                    img.save(save_path.clone())?;
                     ctx.shaduled_snapshot_settings = None;
+                    created_capture_file = Some(save_path);
                 }
 
                 Ok(Box::new(ThermalCapturerResult {
@@ -226,6 +237,7 @@ impl ThermalCapturer {
                     ),
                     gizmo_results,
                     capture_time,
+                    created_capture_file,
                 }))
             }
             loop {

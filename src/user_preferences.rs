@@ -93,7 +93,7 @@ impl UserPreferences {
         if !dir_path.exists() {
             fs::create_dir_all(&dir_path)?;
         }
-       
+
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer_pretty(writer, self)?;

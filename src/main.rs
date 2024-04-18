@@ -1,7 +1,12 @@
 #![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{LinkedList, VecDeque},
+    rc::Rc,
+    time::SystemTime,
+};
 
 use chart_pane::ChartPane;
 use dynamic_range_curve::DynamicRangeCurve;
@@ -20,8 +25,11 @@ use eframe::{
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
 use panes::{
-    capture_pane::CapturePane, histogram_pane::HistogramPane, measurements_pane::MeasurementsPane,
-    setup_pane::SetupPane, thermal_display_pane::ThermalDisplayPane,
+    capture_pane::{CapturePane, GalleryElement},
+    histogram_pane::HistogramPane,
+    measurements_pane::MeasurementsPane,
+    setup_pane::SetupPane,
+    thermal_display_pane::ThermalDisplayPane,
     user_preferences_pane::UserPreferencesPane,
 };
 use temperature::{Temp, TempRange, TemperatureUnit};
@@ -87,6 +95,10 @@ pub struct AppGlobalState {
     history_data_collector: HistoryDataCollector,
 
     prefs: Option<UserPreferences>,
+
+    // Thumbnails shown in the "Capture tab"
+    gallery: VecDeque<GalleryElement>,
+    did_init_gallery: bool,
 }
 
 impl AppGlobalState {
@@ -169,6 +181,9 @@ impl Default for ThermalViewerApp {
             last_thermal_capturer_result: None,
             hotplug_detector: None,
             history_data_collector: HistoryDataCollector::new(),
+
+            gallery: VecDeque::new(),
+            did_init_gallery: false,
         };
 
         ThermalViewerApp {
@@ -191,7 +206,9 @@ impl eframe::App for ThermalViewerApp {
                     .inspect_err(|err| {
                         error!(
                             "Failed to load user preferences from {}: {}",
-                            UserPreferences::preferences_path().to_string_lossy().to_string(),
+                            UserPreferences::preferences_path()
+                                .to_string_lossy()
+                                .to_string(),
                             err
                         )
                     })
@@ -231,7 +248,21 @@ impl eframe::App for ThermalViewerApp {
                                         &result.gizmo_results,
                                     )
                                     .unwrap();
+                                // Add image to gallery if needed
+                                if let Some(saved_file) =
+                                    result.created_capture_file.as_ref().map(|p| p.clone())
+                                {
+                                    borrowed_global_state.gallery.push_front(GalleryElement {
+                                        path: saved_file,
+                                        created_at: SystemTime::now(),
+                                    });
+
+                                    if borrowed_global_state.gallery.len() > 20 {
+                                        borrowed_global_state.gallery.pop_back();
+                                    }
+                                }
                                 borrowed_global_state.last_thermal_capturer_result = Some(result);
+
                                 had_result = true;
                             }
                             Err(e) => {

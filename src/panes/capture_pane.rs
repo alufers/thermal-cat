@@ -9,6 +9,7 @@ use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Button, Image,
 
 use crate::{
     pane_dispatcher::Pane,
+    record_video::VideoRecordingSettings,
     thermal_capturer::SnapshotSettings,
     types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
     AppGlobalState,
@@ -91,17 +92,62 @@ impl Pane for CapturePane {
                     &mut self.video_format,
                     available_width / 2.0 - 5.0,
                 );
+                let is_recording = global_state
+                    .last_thermal_capturer_result
+                    .as_ref()
+                    .map(|res| res.is_recording_video)
+                    .unwrap_or(false);
 
-                if ui
-                    .add(
-                        Button::image_and_text(
-                            egui::include_image!("../icons/video.svg"),
-                            "Record video",
+                if is_recording {
+                    if ui
+                        .add(
+                            Button::image_and_text(
+                                egui::include_image!("../icons/video.svg"),
+                                "Stop recording",
+                            )
+                            .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
                         )
-                        .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
-                    )
-                    .clicked()
-                {}
+                        .clicked()
+                    {
+                        let captures_dir = global_state
+                            .prefs
+                            .as_ref()
+                            .map(|prefs| prefs.captures_directory.clone())
+                            .unwrap_or("./".to_string());
+
+                        if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
+                        {
+                            thermal_capturer.stop_video_recording()
+                        }
+                    }
+                } else {
+                    if ui
+                        .add(
+                            Button::image_and_text(
+                                egui::include_image!("../icons/video.svg"),
+                                "Record video",
+                            )
+                            .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
+                        )
+                        .clicked()
+                    {
+                        let captures_dir = global_state
+                            .prefs
+                            .as_ref()
+                            .map(|prefs| prefs.captures_directory.clone())
+                            .unwrap_or("./".to_string());
+
+                        if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
+                        {
+                            thermal_capturer.start_video_recording(VideoRecordingSettings {
+                                output_path: PathBuf::from(captures_dir),
+                                format: self.video_format,
+                                height: 0,
+                                width: 0,
+                            })
+                        }
+                    }
+                }
             });
         });
 

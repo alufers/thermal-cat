@@ -1,12 +1,7 @@
 #![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
-use std::{
-    cell::RefCell,
-    collections::{VecDeque},
-    rc::Rc,
-    time::SystemTime,
-};
+use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::SystemTime};
 
 use chart_pane::ChartPane;
 use dynamic_range_curve::DynamicRangeCurve;
@@ -48,6 +43,7 @@ mod history_data_collector;
 mod hotplug_detector;
 mod pane_dispatcher;
 mod panes;
+mod record_video;
 mod temperature;
 mod temperature_edit_field;
 mod thermal_capturer;
@@ -249,9 +245,7 @@ impl eframe::App for ThermalViewerApp {
                                     )
                                     .unwrap();
                                 // Add image to gallery if needed
-                                if let Some(saved_file) =
-                                    result.created_capture_file.clone()
-                                {
+                                if let Some(saved_file) = result.created_capture_file.clone() {
                                     borrowed_global_state.gallery.push_front(GalleryElement {
                                         path: saved_file,
                                         created_at: SystemTime::now(),

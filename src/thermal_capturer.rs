@@ -17,6 +17,7 @@ use crate::{
     camera_adapter::CameraAdapter,
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
+    record_video::VideoRecordingSettings,
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
@@ -34,6 +35,8 @@ pub struct ThermalCapturerResult {
     pub capture_time: std::time::Instant,
 
     pub created_capture_file: Option<PathBuf>,
+
+    pub is_recording_video: bool,
 }
 
 #[derive(Clone)]
@@ -71,6 +74,8 @@ pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
     TakeSnapshot(SnapshotSettings),
+    StartVideoRecording(VideoRecordingSettings),
+    StopVideoRecording,
     Stop,
 }
 
@@ -84,7 +89,9 @@ struct ThermalCapturerCtx {
     auto_range_controller: AutoDisplayRangeController,
     last_frame_time: std::time::Instant,
 
-    shaduled_snapshot_settings: Option<SnapshotSettings>,
+    scheduled_snapshot_settings: Option<SnapshotSettings>,
+
+    current_recording_channel: Option<mpsc::Sender<RgbImage>>,
 }
 
 pub struct ThermalCapturer {
@@ -116,7 +123,8 @@ impl ThermalCapturer {
                 settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
                 last_frame_time: std::time::Instant::now(),
-                shaduled_snapshot_settings: None,
+                scheduled_snapshot_settings: None,
+                current_recording_channel: None,
             }),
             cmd_sender,
             result_receiver,
@@ -198,18 +206,11 @@ impl ThermalCapturer {
                     });
 
                 let mut created_capture_file = None;
-                if let Some(snapshot_settings) = ctx.shaduled_snapshot_settings.take() {
-                    let dir_path = snapshot_settings.dir_path;
-                    std::fs::create_dir_all(dir_path.clone())?;
-                    let current_local: DateTime<Local> = Local::now();
 
-                    let filename = format!(
-                        "{}_{}.{}",
-                        pathify_string(ctx.adapter.short_name()),
-                        current_local.format("%Y-%m-%d_%H-%M-%S"),
-                        snapshot_settings.image_format.extension()
-                    );
-                    let img = image::RgbaImage::from_raw(
+                let is_capturing_current_frame = ctx.scheduled_snapshot_settings.is_some()
+                    || ctx.current_recording_channel.is_some();
+                if is_capturing_current_frame {
+                    let rgba_img = image::RgbaImage::from_raw(
                         image.width() as u32,
                         image.height() as u32,
                         image.as_raw().into(),
@@ -217,12 +218,32 @@ impl ThermalCapturer {
                     .ok_or(anyhow!("Failed to create image when saving snapshot"))?;
 
                     // Convert to Rgb8, we don't need the alpha channel
-                    let img: RgbImage = rgba8_to_rgb8(img);
+                    let img = rgba8_to_rgb8(rgba_img);
 
-                    let save_path = dir_path.join(PathBuf::from(filename));
-                    img.save(save_path.clone())?;
-                    ctx.shaduled_snapshot_settings = None;
-                    created_capture_file = Some(save_path);
+                    if let Some(snapshot_settings) = ctx.scheduled_snapshot_settings.take() {
+                        let dir_path = snapshot_settings.dir_path;
+                        std::fs::create_dir_all(dir_path.clone())?;
+                        let current_local: DateTime<Local> = Local::now();
+
+                        let filename = format!(
+                            "{}_{}.{}",
+                            pathify_string(ctx.adapter.short_name()),
+                            current_local.format("%Y-%m-%d_%H-%M-%S"),
+                            snapshot_settings.image_format.extension()
+                        );
+
+                        let save_path = dir_path.join(PathBuf::from(filename));
+                        img.save(save_path.clone())?;
+                        ctx.scheduled_snapshot_settings = None;
+                        created_capture_file = Some(save_path);
+                    }
+
+                    if let Some(recording_channel) = &ctx.current_recording_channel {
+                       
+                        if let Err(err) = recording_channel.send(img) {
+                            log::error!("Failed to send frame to recording channel: {}", err);
+                        }
+                    }
                 }
 
                 Ok(Box::new(ThermalCapturerResult {
@@ -238,6 +259,7 @@ impl ThermalCapturer {
                     gizmo_results,
                     capture_time,
                     created_capture_file,
+                    is_recording_video: ctx.current_recording_channel.is_some(),
                 }))
             }
             loop {
@@ -260,7 +282,39 @@ impl ThermalCapturer {
                             ctx.settings = range_settings;
                         }
                         ThermalCapturerCmd::TakeSnapshot(snapshot_settings) => {
-                            ctx.shaduled_snapshot_settings = Some(snapshot_settings);
+                            ctx.scheduled_snapshot_settings = Some(snapshot_settings);
+                        }
+                        ThermalCapturerCmd::StartVideoRecording(settings) => {
+                            // TODO: move this somewhere else, along with snapshot saving,
+                            let dir_path = settings.output_path;
+                            let _ = std::fs::create_dir_all(dir_path.clone()).inspect_err(|err| {
+                                log::error!("Failed to create directory: {}", err);
+                            });
+                            let current_local: DateTime<Local> = Local::now();
+
+                            let filename = format!(
+                                "{}_{}.{}",
+                                pathify_string(ctx.adapter.short_name()),
+                                current_local.format("%Y-%m-%d_%H-%M-%S"),
+                                settings.format.extension()
+                            );
+
+                            let settings = VideoRecordingSettings {
+                                output_path: dir_path.join(PathBuf::from(filename)),
+                                height: 192,
+                                width: 256,
+                                ..settings
+                            };
+                            ctx.current_recording_channel = Some(
+                                crate::record_video::record_video(settings)
+                                    .inspect_err(|err| {
+                                        log::error!("Failed to start recording: {}", err);
+                                    })
+                                    .unwrap(),
+                            );
+                        }
+                        ThermalCapturerCmd::StopVideoRecording => {
+                            ctx.current_recording_channel = None;
                         }
                     }
                 }
@@ -276,6 +330,18 @@ impl ThermalCapturer {
     pub fn take_snapshot(&mut self, settings: SnapshotSettings) {
         self.cmd_sender
             .send(ThermalCapturerCmd::TakeSnapshot(settings))
+            .unwrap();
+    }
+
+    pub fn start_video_recording(&mut self, settings: VideoRecordingSettings) {
+        self.cmd_sender
+            .send(ThermalCapturerCmd::StartVideoRecording(settings))
+            .unwrap();
+    }
+
+    pub fn stop_video_recording(&mut self) {
+        self.cmd_sender
+            .send(ThermalCapturerCmd::StopVideoRecording)
             .unwrap();
     }
 }

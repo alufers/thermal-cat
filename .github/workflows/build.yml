@@ -29,6 +29,10 @@ jobs:
         run: |
           cargo install cargo-bundle
           cargo bundle --release
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: Install ffmpeg
+        run: |
+          brew install ffmpeg
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         name: Install cargo-appimage and build AppImage
         run: |

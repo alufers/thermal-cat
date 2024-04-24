@@ -239,7 +239,6 @@ impl ThermalCapturer {
                     }
 
                     if let Some(recording_channel) = &ctx.current_recording_channel {
-                       
                         if let Err(err) = recording_channel.send(img) {
                             log::error!("Failed to send frame to recording channel: {}", err);
                         }
@@ -303,6 +302,7 @@ impl ThermalCapturer {
                                 output_path: dir_path.join(PathBuf::from(filename)),
                                 height: 192,
                                 width: 256,
+                                framerate: ctx.camera.frame_rate() as usize,
                                 ..settings
                             };
                             ctx.current_recording_channel = Some(

@@ -144,6 +144,7 @@ impl Pane for CapturePane {
                                 format: self.video_format,
                                 height: 0,
                                 width: 0,
+                                framerate: 0,
                             })
                         }
                     }

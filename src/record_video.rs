@@ -3,6 +3,7 @@ use chrono::{DateTime, Local};
 use eframe::epaint::tessellator::Path;
 use image::RgbImage;
 use once_cell::race::OnceBool;
+use video_rs::ffmpeg::codec::video;
 use video_rs::ffmpeg::format::Pixel;
 
 use std::path::PathBuf;
@@ -11,6 +12,7 @@ use std::thread;
 use video_rs::encode::Settings;
 use video_rs::ffmpeg::ffi::{av_image_copy, av_image_fill_arrays, AVPixelFormat};
 use video_rs::ffmpeg::frame::Video as Frame;
+use video_rs::time::Time;
 use video_rs::Encoder;
 
 use crate::types::media_formats::VideoFormat;
@@ -22,6 +24,7 @@ pub struct VideoRecordingSettings {
     pub format: VideoFormat,
     pub width: usize,
     pub height: usize,
+    pub framerate: usize,
 }
 
 static DID_INIT_VIDEO_RS: OnceBool = OnceBool::new();
@@ -41,26 +44,26 @@ pub fn record_video(settings: VideoRecordingSettings) -> Result<Sender<RgbImage>
     let current_local: DateTime<Local> = Local::now();
 
     let preset = Settings::preset_h264_yuv420p(settings.width, settings.height, true);
-    
+
     let mut encoder = Encoder::new(settings.output_path, preset)
         .map_err(|err| anyhow::anyhow!("failed to create encoder: {}", err))?;
 
+    let duration: Time = Time::from_nth_of_a_second(settings.framerate);
+    let mut position = Time::zero();
 
-       
     thread::spawn(move || {
         while let Ok(frame) = rx_frames.recv() {
-
-           
             let video_frame = convert_rgb_image_to_video_frame(frame)
                 .map_err(|err| anyhow::anyhow!("failed to convert frame: {}", err));
 
-            
             match video_frame {
                 Err(err) => {
                     log::error!("failed to convert frame: {}", err);
                     break;
                 }
                 Ok(video_frame) => {
+                    let mut video_frame = video_frame;
+                    video_frame.set_pts(position.with_time_base(encoder.time_base()).into_value());
                     let res = encoder.encode_raw(video_frame).inspect_err(|err| {
                         log::error!("failed to encode frame: {}", err);
                     });
@@ -69,11 +72,9 @@ pub fn record_video(settings: VideoRecordingSettings) -> Result<Sender<RgbImage>
                     }
                 }
             }
-
-           
+            position = position.aligned_with(&duration).add();
         }
-       
-     
+
         let _ = encoder.finish().inspect_err(|err| {
             log::error!("failed to finish encoding: {}", err);
         });

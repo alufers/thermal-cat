@@ -2,7 +2,6 @@ use crate::types::image_rotation::ImageRotation;
 use eframe::epaint::{Color32, ColorImage};
 use image::{GenericImage, Pixel, Rgb, RgbImage, Rgba};
 use imageproc::{
-    drawing::{draw_filled_rect, draw_filled_rect_mut},
     rect::Rect,
 };
 
@@ -110,15 +109,15 @@ where
     I::Pixel: 'static,
 {
     fn is_point_in_rounded_rect(x: i32, y: i32, rect: Rect, radius: i32) -> bool {
-        let x0 = rect.left() as i32 + radius;
-        let x1 = rect.right() as i32 - radius;
-        let y0 = rect.top() as i32 + radius;
-        let y1 = rect.bottom() as i32 - radius;
+        let x0 = rect.left() + radius;
+        let x1 = rect.right() - radius;
+        let y0 = rect.top() + radius;
+        let y1 = rect.bottom() - radius;
 
-        if x >= x0 && x <= x1 && y >= rect.top() as i32 && y <= rect.bottom() as i32 {
+        if x >= x0 && x <= x1 && y >= rect.top() && y <= rect.bottom() {
             return true;
         }
-        if y >= y0 && y <= y1 && x >= rect.left() as i32 && x <= rect.right() as i32 {
+        if y >= y0 && y <= y1 && x >= rect.left() && x <= rect.right() {
             return true;
         }
 
@@ -139,8 +138,8 @@ where
     if let Some(intersection) = image_bounds.intersect(rect) {
         for dy in 0..intersection.height() {
             for dx in 0..intersection.width() {
-                let x = intersection.left() as i32 + dx as i32;
-                let y = intersection.top() as i32 + dy as i32;
+                let x = intersection.left() + dx as i32;
+                let y = intersection.top() + dy as i32;
                 if is_point_in_rounded_rect(x, y, rect, radius) {
                     unsafe {
                         image.unsafe_put_pixel(x as u32, y as u32, color);

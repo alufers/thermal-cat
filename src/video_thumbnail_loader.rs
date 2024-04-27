@@ -139,14 +139,14 @@ impl ImageLoader for VideoThumbnailLoader {
                                     // ))
                                     image::DynamicImage::ImageRgb8(
                                         image::RgbImage::from_raw(
-                                            f.width() as u32,
-                                            f.height() as u32,
+                                            f.width(),
+                                            f.height(),
                                             f.data(0).to_vec(),
                                         )
                                         .unwrap(),
                                     )
                                 })
-                                .map(|img| overlay_film_frame(img))
+                                .map(overlay_film_frame)
                                 .map(|img| {
                                     Arc::new(image_to_egui_color_image(
                                         image::DynamicImage::ImageRgb8(img),

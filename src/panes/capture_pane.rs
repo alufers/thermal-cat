@@ -10,7 +10,7 @@ use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Button, Image,
 use crate::{
     pane_dispatcher::Pane,
     record_video::VideoRecordingSettings,
-    thermal_capturer::SnapshotSettings,
+    thermal_capturer::{SnapshotSettings, StartVideoRecordingSettings},
     types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
     AppGlobalState,
 };
@@ -139,12 +139,9 @@ impl Pane for CapturePane {
 
                         if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
                         {
-                            thermal_capturer.start_video_recording(VideoRecordingSettings {
-                                output_path: PathBuf::from(captures_dir),
+                            thermal_capturer.start_video_recording(StartVideoRecordingSettings {
+                                output_dir: PathBuf::from(captures_dir),
                                 format: self.video_format,
-                                height: 0,
-                                width: 0,
-                                framerate: 0,
                             })
                         }
                     }

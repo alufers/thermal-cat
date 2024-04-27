@@ -21,7 +21,10 @@ use crate::{
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
-    types::{image_rotation::ImageRotation, media_formats::ImageFormat},
+    types::{
+        image_rotation::ImageRotation,
+        media_formats::{ImageFormat, VideoFormat},
+    },
     util::{pathify_string, rgba8_to_rgb8},
 };
 
@@ -49,12 +52,6 @@ pub struct ThermalCapturerSettings {
     pub dynamic_range_curve: DynamicRangeCurve,
 }
 
-#[derive(Clone)]
-pub struct SnapshotSettings {
-    pub dir_path: PathBuf,
-    pub image_format: ImageFormat,
-}
-
 impl ThermalCapturerSettings {
     //
     // Returns the color corresponding to the given temperature,
@@ -69,12 +66,24 @@ impl ThermalCapturerSettings {
     }
 }
 
+#[derive(Clone)]
+pub struct SnapshotSettings {
+    pub dir_path: PathBuf,
+    pub image_format: ImageFormat,
+}
+
+/// Settings used when starting a video recording session from the UI thread
+pub struct StartVideoRecordingSettings {
+    pub output_dir: PathBuf,
+    pub format: VideoFormat,
+}
+
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
     TakeSnapshot(SnapshotSettings),
-    StartVideoRecording(VideoRecordingSettings),
+    StartVideoRecording(StartVideoRecordingSettings),
     StopVideoRecording,
     Stop,
 }
@@ -285,7 +294,7 @@ impl ThermalCapturer {
                         }
                         ThermalCapturerCmd::StartVideoRecording(settings) => {
                             // TODO: move this somewhere else, along with snapshot saving,
-                            let dir_path = settings.output_path;
+                            let dir_path = settings.output_dir;
                             let _ = std::fs::create_dir_all(dir_path.clone()).inspect_err(|err| {
                                 log::error!("Failed to create directory: {}", err);
                             });
@@ -299,11 +308,11 @@ impl ThermalCapturer {
                             );
 
                             let settings = VideoRecordingSettings {
+                                format: settings.format,
                                 output_path: dir_path.join(PathBuf::from(filename)),
                                 height: 192,
                                 width: 256,
                                 framerate: ctx.camera.frame_rate() as usize,
-                                ..settings
                             };
                             ctx.current_recording_channel = Some(
                                 crate::record_video::record_video(settings)
@@ -333,7 +342,7 @@ impl ThermalCapturer {
             .unwrap();
     }
 
-    pub fn start_video_recording(&mut self, settings: VideoRecordingSettings) {
+    pub fn start_video_recording(&mut self, settings: StartVideoRecordingSettings) {
         self.cmd_sender
             .send(ThermalCapturerCmd::StartVideoRecording(settings))
             .unwrap();

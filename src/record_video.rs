@@ -19,7 +19,7 @@ use crate::types::media_formats::VideoFormat;
 use crate::util::pathify_string;
 
 #[derive(Debug, Clone)]
-pub struct VideoRecordingSettings {
+pub struct  VideoRecordingSettings {
     pub output_path: PathBuf,
     pub format: VideoFormat,
     pub width: usize,
@@ -43,7 +43,7 @@ pub fn record_video(settings: VideoRecordingSettings) -> Result<Sender<RgbImage>
 
     let current_local: DateTime<Local> = Local::now();
 
-    let preset = Settings::preset_h264_yuv420p(settings.width, settings.height, true);
+    let preset = Settings::preset_h264_yuv420p(settings.width, settings.height, false);
 
     let mut encoder = Encoder::new(settings.output_path, preset)
         .map_err(|err| anyhow::anyhow!("failed to create encoder: {}", err))?;

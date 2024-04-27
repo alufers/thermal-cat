@@ -1,6 +1,10 @@
 use crate::types::image_rotation::ImageRotation;
 use eframe::epaint::{Color32, ColorImage};
-use image::{Rgb, Rgba};
+use image::{GenericImage, Pixel, Rgb, RgbImage, Rgba};
+use imageproc::{
+    drawing::{draw_filled_rect, draw_filled_rect_mut},
+    rect::Rect,
+};
 
 pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
     if rotation == ImageRotation::None {
@@ -70,4 +74,121 @@ pub fn rgba8_to_rgb8(
 
     // Construct a new image
     image::ImageBuffer::from_raw(width as u32, height as u32, output_data).unwrap()
+}
+
+pub fn image_to_egui_color_image(img: image::DynamicImage) -> ColorImage {
+    let size = [img.width() as _, img.height() as _];
+    let image_buffer = img.to_rgba8();
+    let pixels = image_buffer.as_flat_samples();
+    ColorImage::from_rgba_unmultiplied(size, pixels.as_slice())
+}
+
+pub fn draw_blended_rect_mut<I>(image: &mut I, rect: Rect, color: I::Pixel)
+where
+    I: GenericImage,
+    I::Pixel: 'static,
+{
+    let image_bounds = Rect::at(0, 0).of_size(image.width(), image.height());
+    if let Some(intersection) = image_bounds.intersect(rect) {
+        for dy in 0..intersection.height() {
+            for dx in 0..intersection.width() {
+                let x = intersection.left() as u32 + dx;
+                let y = intersection.top() as u32 + dy;
+                let mut pixel = image.get_pixel(x, y); // added
+                pixel.blend(&color); // added
+                unsafe {
+                    image.unsafe_put_pixel(x, y, pixel); // changed
+                }
+            }
+        }
+    }
+}
+
+pub fn draw_rounded_rect_mut<I>(image: &mut I, rect: Rect, radius: i32, color: I::Pixel)
+where
+    I: GenericImage,
+    I::Pixel: 'static,
+{
+    fn is_point_in_rounded_rect(x: i32, y: i32, rect: Rect, radius: i32) -> bool {
+        let x0 = rect.left() as i32 + radius;
+        let x1 = rect.right() as i32 - radius;
+        let y0 = rect.top() as i32 + radius;
+        let y1 = rect.bottom() as i32 - radius;
+
+        if x >= x0 && x <= x1 && y >= rect.top() as i32 && y <= rect.bottom() as i32 {
+            return true;
+        }
+        if y >= y0 && y <= y1 && x >= rect.left() as i32 && x <= rect.right() as i32 {
+            return true;
+        }
+
+        let corner =
+            |x: i32, y: i32, cx: i32, cy: i32| (x - cx).pow(2) + (y - cy).pow(2) <= radius.pow(2);
+
+        if corner(x, y, x0, y0)
+            || corner(x, y, x1, y0)
+            || corner(x, y, x0, y1)
+            || corner(x, y, x1, y1)
+        {
+            return true;
+        }
+
+        false
+    }
+    let image_bounds = Rect::at(0, 0).of_size(image.width(), image.height());
+    if let Some(intersection) = image_bounds.intersect(rect) {
+        for dy in 0..intersection.height() {
+            for dx in 0..intersection.width() {
+                let x = intersection.left() as i32 + dx as i32;
+                let y = intersection.top() as i32 + dy as i32;
+                if is_point_in_rounded_rect(x, y, rect, radius) {
+                    unsafe {
+                        image.unsafe_put_pixel(x as u32, y as u32, color);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Overlays an old style film frame on top of the image
+/// Added to video thumbnails to differentiate them from images
+pub fn overlay_film_frame(img: image::DynamicImage) -> RgbImage {
+    let mut img = img.to_rgba8();
+    let height = img.height();
+    let width = img.width();
+
+    let black_semitransparent = Rgba([0, 0, 0, 128]);
+    let white = Rgba([255, 255, 255, 255]);
+
+    const FILM_STIPES_WIDTH: u32 = 32;
+
+    draw_blended_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(FILM_STIPES_WIDTH, height),
+        black_semitransparent,
+    );
+    draw_blended_rect_mut(
+        &mut img,
+        Rect::at((width - FILM_STIPES_WIDTH) as i32, 0).of_size(FILM_STIPES_WIDTH, height),
+        black_semitransparent,
+    );
+
+    for i in (4..height + 32).step_by(30) {
+        draw_rounded_rect_mut(
+            &mut img,
+            Rect::at(6, i as i32).of_size(FILM_STIPES_WIDTH - 12, 14),
+            3,
+            white,
+        );
+
+        draw_rounded_rect_mut(
+            &mut img,
+            Rect::at((width - FILM_STIPES_WIDTH) as i32 + 6, i as i32)
+                .of_size(FILM_STIPES_WIDTH - 12, 14),
+            3,
+            white,
+        );
+    }
+    image::DynamicImage::ImageRgba8(img).to_rgb8()
 }

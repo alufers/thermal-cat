@@ -31,6 +31,7 @@ use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
 use types::image_rotation::ImageRotation;
 use user_preferences::UserPreferences;
+use video_thumbnail_loader::VideoThumbnailLoader;
 
 mod auto_display_range_controller;
 mod camera_adapter;
@@ -52,6 +53,7 @@ mod thermal_gradient;
 mod types;
 mod user_preferences;
 mod util;
+mod video_thumbnail_loader;
 mod widgets;
 
 fn main() -> Result<(), eframe::Error> {
@@ -73,6 +75,9 @@ fn main() -> Result<(), eframe::Error> {
         Box::new(|cc| {
             // This gives us image support:
             egui_extras::install_image_loaders(&cc.egui_ctx);
+
+            cc.egui_ctx
+                .add_image_loader(std::sync::Arc::new(VideoThumbnailLoader::default()));
 
             Box::<ThermalViewerApp>::default()
         }),

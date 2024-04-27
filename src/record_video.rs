@@ -1,9 +1,7 @@
 use anyhow::Error;
 use chrono::{DateTime, Local};
-use eframe::epaint::tessellator::Path;
 use image::RgbImage;
 use once_cell::race::OnceBool;
-use video_rs::ffmpeg::codec::video;
 use video_rs::ffmpeg::format::Pixel;
 
 use std::path::PathBuf;
@@ -16,10 +14,9 @@ use video_rs::time::Time;
 use video_rs::Encoder;
 
 use crate::types::media_formats::VideoFormat;
-use crate::util::pathify_string;
 
 #[derive(Debug, Clone)]
-pub struct  VideoRecordingSettings {
+pub struct VideoRecordingSettings {
     pub output_path: PathBuf,
     pub format: VideoFormat,
     pub width: usize,
@@ -80,7 +77,7 @@ pub fn record_video(settings: VideoRecordingSettings) -> Result<Sender<RgbImage>
         });
     });
 
-    return Ok(tx_frames);
+    Ok(tx_frames)
 }
 
 pub fn convert_rgb_image_to_video_frame(img: RgbImage) -> Result<Frame, Error> {
@@ -113,7 +110,7 @@ pub fn convert_rgb_image_to_video_frame(img: RgbImage) -> Result<Frame, Error> {
             ));
         }
 
-        let mut frame = Frame::new(Pixel::RGB24, frame_width as u32, frame_height as u32);
+        let mut frame = Frame::new(Pixel::RGB24, frame_width, frame_height);
         let frame_ptr = frame.as_mut_ptr();
 
         // Do the actual copying.

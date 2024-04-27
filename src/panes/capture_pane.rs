@@ -9,7 +9,6 @@ use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Button, Image,
 
 use crate::{
     pane_dispatcher::Pane,
-    record_video::VideoRecordingSettings,
     thermal_capturer::{SnapshotSettings, StartVideoRecordingSettings},
     types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
     AppGlobalState,
@@ -120,30 +119,27 @@ impl Pane for CapturePane {
                             thermal_capturer.stop_video_recording()
                         }
                     }
-                } else {
-                    if ui
-                        .add(
-                            Button::image_and_text(
-                                egui::include_image!("../icons/video.svg"),
-                                "Record video",
-                            )
-                            .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
+                } else if ui
+                    .add(
+                        Button::image_and_text(
+                            egui::include_image!("../icons/video.svg"),
+                            "Record video",
                         )
-                        .clicked()
-                    {
-                        let captures_dir = global_state
-                            .prefs
-                            .as_ref()
-                            .map(|prefs| prefs.captures_directory.clone())
-                            .unwrap_or("./".to_string());
+                        .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
+                    )
+                    .clicked()
+                {
+                    let captures_dir = global_state
+                        .prefs
+                        .as_ref()
+                        .map(|prefs| prefs.captures_directory.clone())
+                        .unwrap_or("./".to_string());
 
-                        if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
-                        {
-                            thermal_capturer.start_video_recording(StartVideoRecordingSettings {
-                                output_dir: PathBuf::from(captures_dir),
-                                format: self.video_format,
-                            })
-                        }
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.start_video_recording(StartVideoRecordingSettings {
+                            output_dir: PathBuf::from(captures_dir),
+                            format: self.video_format,
+                        })
                     }
                 }
             });

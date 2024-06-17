@@ -1,9 +1,7 @@
 use crate::types::image_rotation::ImageRotation;
 use eframe::epaint::{Color32, ColorImage};
 use image::{GenericImage, Pixel, Rgb, RgbImage, Rgba};
-use imageproc::{
-    rect::Rect,
-};
+use imageproc::rect::Rect;
 
 pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
     if rotation == ImageRotation::None {

@@ -4,7 +4,8 @@ use eframe::{
     egui::{
         self,
         load::{TextureLoadResult, TexturePoll},
-        DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui, Widget,
+        Button, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
+        Widget,
     },
     emath::Align2,
     epaint::{Color32, TextureHandle, Vec2},
@@ -58,7 +59,14 @@ impl ThermalDisplayPane {
                     .max_width(16.0)
                     .tint(ui.style().visuals.widgets.active.fg_stroke.color)
                     .ui(ui);
-                ui.checkbox(&mut self.zoom_to_fit, "Zoom to fit");
+
+                if ui
+                    .add_enabled(!self.zoom_to_fit, Button::new("Reset zoom"))
+                    .on_hover_text("Reset zoom to fit the screen")
+                    .clicked()
+                {
+                    self.zoom_to_fit = true;
+                }
                 if zoom_edit_field(ui, &mut self.external_zoom_factor).changed() {
                     self.external_zoom_factor_changed = true;
                     self.zoom_to_fit = false;

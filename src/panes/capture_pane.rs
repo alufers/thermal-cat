@@ -114,12 +114,6 @@ impl Pane for CapturePane {
                             )
                             .clicked()
                         {
-                            let captures_dir = global_state
-                                .prefs
-                                .as_ref()
-                                .map(|prefs| prefs.captures_directory.clone())
-                                .unwrap_or("./".to_string());
-
                             if let Some(thermal_capturer) =
                                 global_state.thermal_capturer_inst.as_mut()
                             {

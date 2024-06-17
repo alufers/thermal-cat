@@ -373,8 +373,7 @@ pub fn dynamic_curve_editor(
             // draw point markers
             for (i, p) in curve.points.iter().enumerate() {
                 let is_dragged = state.dragged_point_idx == Some(i);
-                let border_color = if hovered_point_idx.map(|h| h == i).unwrap_or_default()
-                {
+                let border_color = if hovered_point_idx.map(|h| h == i).unwrap_or_default() {
                     plot_ui
                         .ctx()
                         .style()

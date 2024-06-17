@@ -254,29 +254,7 @@ impl Pane for ThermalDisplayPane {
                                         let y = img_size.1 as f64 - result.pos.y as f64;
 
                                         let _size = 10.0;
-
-                                        // let point = PlotPoint::new(x, y);
-                                        //TODO: Decide which one I want...
-
-                                        // if let Some(crosshair) = self.crosshair_texture.as_ref() {
-                                        //     // white backdrop for contrast
-                                        //     plot_ui.image(PlotImage::new(
-                                        //         crosshair,
-                                        //         point,
-                                        //         // 5 seems okay
-                                        //         Vec2::new(6.0, 6.0),
-                                        //     ));
-                                        //     plot_ui.image(
-                                        //         PlotImage::new(
-                                        //             crosshair,
-                                        //             point,
-                                        //             // 5 seems okay
-                                        //             Vec2::new(5.0, 5.0),
-                                        //         )
-                                        //         .tint(c.color),
-                                        //     );
-                                        // }
-
+                                        
                                         plot_ui.points(
                                             Points::new(vec![[x, y]])
                                                 .shape(MarkerShape::Circle)

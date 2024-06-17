@@ -5,7 +5,9 @@ use std::{
     rc::Rc,
 };
 
-use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Button, Image, Layout, Vec2};
+use eframe::egui::{
+    self, scroll_area::ScrollBarVisibility, Align, Button, Color32, Image, Layout, Vec2,
+};
 
 use crate::{
     pane_dispatcher::Pane,
@@ -98,27 +100,33 @@ impl Pane for CapturePane {
                     .unwrap_or(false);
 
                 if is_recording {
-                    if ui
-                        .add(
-                            Button::image_and_text(
-                                egui::include_image!("../icons/video.svg"),
-                                "Stop recording",
+                    ui.scope(|ui| {
+                        ui.style_mut().visuals.widgets.inactive.weak_bg_fill = Color32::from_hex("#e61b29").unwrap();
+                        ui.style_mut().visuals.widgets.inactive.fg_stroke.color = Color32::from_hex("#ffffff").unwrap();
+                        ui.style_mut().visuals.widgets.hovered.weak_bg_fill = Color32::from_hex("#e61b29").unwrap();
+                        if ui
+                            .add(
+                                Button::image_and_text(
+                                    egui::include_image!("../icons/video.svg"),
+                                    "Stop recording",
+                                )
+                                .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
                             )
-                            .min_size(Vec2::new(available_width / 2.0 - 5.0, 25.0)),
-                        )
-                        .clicked()
-                    {
-                        let captures_dir = global_state
-                            .prefs
-                            .as_ref()
-                            .map(|prefs| prefs.captures_directory.clone())
-                            .unwrap_or("./".to_string());
-
-                        if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
+                            .clicked()
                         {
-                            thermal_capturer.stop_video_recording()
+                            let captures_dir = global_state
+                                .prefs
+                                .as_ref()
+                                .map(|prefs| prefs.captures_directory.clone())
+                                .unwrap_or("./".to_string());
+
+                            if let Some(thermal_capturer) =
+                                global_state.thermal_capturer_inst.as_mut()
+                            {
+                                thermal_capturer.stop_video_recording()
+                            }
                         }
-                    }
+                    });
                 } else if ui
                     .add(
                         Button::image_and_text(

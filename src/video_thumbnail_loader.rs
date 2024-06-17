@@ -57,18 +57,8 @@ impl ImageLoader for VideoThumbnailLoader {
 
         let mut cache = self.cache.lock();
         if let Some(entry) = cache.get(uri).cloned() {
-            // log::trace!("cache hit {uri:?}");
-            // log::trace!("entry is ok {}", entry.is_ok());
             match entry {
                 Ok(image) => {
-                    // log::trace!(
-                    //     "ImagePoll hit is ready: {}",
-                    //     match image.clone() {
-                    //         ImagePoll::Ready { image } => true,
-                    //         _ => false,
-                    //     }
-                    // );
-
                     Ok(image)
                 }
                 Err(err) => Err(LoadError::Loading(err)),

@@ -23,15 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - if: ${{ matrix.os == 'macos-latest' }}
-        name: Install ffmpeg (macOS)
+        name: Install dependencies (macOS)
         run: |
-          brew install ffmpeg
+          brew install ffmpeg pkg-config
       - if: ${{ matrix.os == 'ubuntu-latest' }}
-        name: Install ffmpeg (Ubuntu)
+        name: Install dependencies (Ubuntu)
         run: |
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg clang libavcodec-dev libavformat-dev libavutil-dev pkg-config
       - if: ${{ matrix.os == 'windows-latest' }}
-        name: Install ffmpeg (Windows)
+        name: Install dependencies (Windows)
         run: |
           choco install ffmpeg
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}

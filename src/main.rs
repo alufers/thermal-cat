@@ -142,12 +142,12 @@ impl ThermalViewerApp {
 
         self.dock_state.main_surface_mut().split_below(
             left,
-            0.5,
+            0.75,
             vec![Box::new(CapturePane::new(self.global_state.clone()))],
         );
         self.dock_state.main_surface_mut().split_below(
             left,
-            0.7,
+            0.8,
             vec![Box::new(MeasurementsPane::new(self.global_state.clone()))],
         );
     }

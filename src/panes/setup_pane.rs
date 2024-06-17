@@ -292,20 +292,25 @@ impl Pane for SetupPane {
         }
         // copy of the range to pass to the edit field
         // (it will not be modified if auto_range is enabled, because the field is disabled)
-        let mut range_copy;
+        let mut range_copy = global_state
+            .last_thermal_capturer_result
+            .as_ref()
+            .map(|r| r.image_range);
         if temperature_range_edit_field(
             ui,
             "range",
             !global_state.thermal_capturer_settings.auto_range,
             global_state.preferred_temperature_unit(),
-            if let Some(result) = global_state.last_thermal_capturer_result.as_ref()
-                && (global_state.thermal_capturer_settings.auto_range)
-            {
-                range_copy = result.image_range;
-                &mut range_copy
-            } else {
-                &mut global_state.thermal_capturer_settings.manual_range
-            },
+            range_copy
+                .as_mut()
+                .and_then(|r| {
+                    if global_state.thermal_capturer_settings.auto_range {
+                        Some(r)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(&mut global_state.thermal_capturer_settings.manual_range),
         )
         .changed()
         {

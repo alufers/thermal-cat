@@ -1,4 +1,3 @@
-#![feature(let_chains)]
 #![deny(elided_lifetimes_in_paths)]
 
 use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::SystemTime};

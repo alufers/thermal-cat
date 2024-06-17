@@ -33,7 +33,7 @@ jobs:
       - if: ${{ matrix.os == 'windows-latest' }}
         name: Install dependencies (Windows)
         run: |
-          choco install ffmpeg pkgconfiglite
+          choco install pkgconfiglite ffmpeg-shared
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo build --verbose --release
       - if: ${{ matrix.os == 'macos-latest' }}

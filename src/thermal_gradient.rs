@@ -66,8 +66,8 @@ impl Hash for ThermalGradientPoint {
 #[derive(Clone, Hash)]
 pub struct ThermalGradient {
     ///
-    // UUID of the gradient (will be important when custom gradients are supported)
-    //
+    /// UUID of the gradient (will be important when custom gradients are supported)
+    ///
     pub uuid: Uuid,
     pub name: String,
     pub points: Vec<ThermalGradientPoint>,

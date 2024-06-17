@@ -273,8 +273,8 @@ impl ThermalCapturer {
             loop {
                 let result = produce_result(&mut ctx);
                 let last_image_size = match result.as_ref() {
-                    Ok(res) => res.image.size.clone(),
-                    Err(err) => [0, 0],
+                    Ok(res) => res.image.size,
+                    Err(_) => [0, 0],
                 };
                 if let Err(err) = ctx.result_sender.send(result) {
                     log::error!("Error sending result: {}", err);

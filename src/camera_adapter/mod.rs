@@ -34,6 +34,7 @@ pub trait CameraAdapter: Send + Sync {
     /// Get the advertised temperature range of the camera
     /// (min, max)
     ///
+    #[allow(dead_code)]
     fn temperature_range(&self) -> (f32, f32);
 
     ///

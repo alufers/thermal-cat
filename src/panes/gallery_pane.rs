@@ -5,15 +5,10 @@ use std::{
     rc::Rc,
 };
 
-use eframe::egui::{
-    self, scroll_area::ScrollBarVisibility, Align, Button, Color32, Image, Layout, Ui, Vec2,
-};
+use eframe::egui::{self, scroll_area::ScrollBarVisibility, Align, Image, Layout, Ui, Vec2};
 
 use crate::{
-    pane_dispatcher::Pane,
-    thermal_capturer::{SnapshotSettings, StartVideoRecordingSettings},
-    types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
-    AppGlobalState,
+    pane_dispatcher::Pane, types::media_formats::all_media_file_extensions, AppGlobalState,
 };
 
 #[derive(Debug, Clone)]
@@ -42,7 +37,7 @@ impl Pane for GalleryPane {
             eprintln!("Failed to initialize gallery: {:?}", err);
         }
         let global_state_clone = self.global_state.clone();
-        let mut global_state = global_state_clone.as_ref().borrow_mut();
+        let global_state = global_state_clone.as_ref().borrow_mut();
 
         // Width of each element in the gallery
         const ELEM_WIDTH: f32 = 150.0;

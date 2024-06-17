@@ -58,9 +58,7 @@ impl ImageLoader for VideoThumbnailLoader {
         let mut cache = self.cache.lock();
         if let Some(entry) = cache.get(uri).cloned() {
             match entry {
-                Ok(image) => {
-                    Ok(image)
-                }
+                Ok(image) => Ok(image),
                 Err(err) => Err(LoadError::Loading(err)),
             }
         } else {
@@ -149,21 +147,6 @@ impl ImageLoader for VideoThumbnailLoader {
                             Ok(image) => Ok(ImagePoll::Ready { image }),
                             Err(err) => Err(err.to_string()),
                         };
-
-                        // debug print
-                        match &result {
-                            Ok(poll) => match poll {
-                                ImagePoll::Ready { image } => {
-                                    log::trace!("inserting image ready at uri: {}", uri);
-                                }
-                                _ => {
-                                    log::trace!("inserting image not ready at uri: {}", uri);
-                                }
-                            },
-                            Err(err) => {
-                                log::error!("inserting error at uri: {}", uri);
-                            }
-                        }
 
                         cache.lock().insert(uri.clone(), result);
                         drop(cache);

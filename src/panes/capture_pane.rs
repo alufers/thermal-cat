@@ -1,18 +1,11 @@
-use std::{
-    cell::RefCell,
-    collections::VecDeque,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-use eframe::egui::{
-    self, scroll_area::ScrollBarVisibility, Align, Button, Color32, Image, Layout, Vec2,
-};
+use eframe::egui::{self, Align, Button, Color32, Layout, Vec2};
 
 use crate::{
     pane_dispatcher::Pane,
     thermal_capturer::{SnapshotSettings, StartVideoRecordingSettings},
-    types::media_formats::{all_media_file_extensions, ImageFormat, VideoFormat},
+    types::media_formats::{ImageFormat, VideoFormat},
     AppGlobalState,
 };
 
@@ -92,9 +85,12 @@ impl Pane for CapturePane {
 
                 if is_recording {
                     ui.scope(|ui| {
-                        ui.style_mut().visuals.widgets.inactive.weak_bg_fill = Color32::from_hex("#e61b29").unwrap();
-                        ui.style_mut().visuals.widgets.inactive.fg_stroke.color = Color32::from_hex("#ffffff").unwrap();
-                        ui.style_mut().visuals.widgets.hovered.weak_bg_fill = Color32::from_hex("#e61b29").unwrap();
+                        ui.style_mut().visuals.widgets.inactive.weak_bg_fill =
+                            Color32::from_hex("#e61b29").unwrap();
+                        ui.style_mut().visuals.widgets.inactive.fg_stroke.color =
+                            Color32::from_hex("#ffffff").unwrap();
+                        ui.style_mut().visuals.widgets.hovered.weak_bg_fill =
+                            Color32::from_hex("#e61b29").unwrap();
                         if ui
                             .add(
                                 Button::image_and_text(
@@ -139,4 +135,3 @@ impl Pane for CapturePane {
         });
     }
 }
-

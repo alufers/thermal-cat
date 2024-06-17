@@ -254,7 +254,7 @@ impl Pane for ThermalDisplayPane {
                                         let y = img_size.1 as f64 - result.pos.y as f64;
 
                                         let _size = 10.0;
-                                        
+
                                         plot_ui.points(
                                             Points::new(vec![[x, y]])
                                                 .shape(MarkerShape::Circle)

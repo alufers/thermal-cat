@@ -1,7 +1,7 @@
 extern crate ffmpeg_next as ffmpeg;
 
 use ffmpeg::ffi::av_log_set_level;
-use ffmpeg::format::{output, output_as, Pixel};
+use ffmpeg::format::{output_as, Pixel};
 use ffmpeg::rescale::TIME_BASE;
 use ffmpeg::software::scaling::Flags;
 use image::RgbImage;
@@ -12,9 +12,7 @@ use std::sync::mpsc::{channel, Sender};
 use std::sync::Mutex;
 use std::thread;
 
-use ffmpeg::{
-    codec, decoder, encoder, format, frame, media, picture, Dictionary, Packet, Rational,
-};
+use ffmpeg::{codec, encoder, format, frame, picture, Dictionary, Packet, Rational};
 
 use crate::types::media_formats::VideoFormat;
 
@@ -105,7 +103,7 @@ pub fn record_video(settings: VideoRecordingSettings) -> Result<Sender<RgbImage>
 
             video_frame.set_kind(picture::Type::None);
             scaler.run(&video_frame, &mut yuv_frame).unwrap();
-            yuv_frame.set_pts(Some((i as i64) * (1000_000 / settings.framerate as i64)));
+            yuv_frame.set_pts(Some((i as i64) * (1_000_000 / settings.framerate as i64)));
             match encoder.send_frame(&yuv_frame) {
                 Ok(_) => {}
                 Err(err) => {
@@ -140,10 +138,10 @@ pub fn convert_rgb_image_to_video_frame(img: RgbImage) -> frame::Video {
     let frame_width = img.width();
     let frame_height = img.height();
 
-    let mut frm = frame::Video::new(Pixel::RGB24, frame_width as u32, frame_height as u32);
+    let mut frm = frame::Video::new(Pixel::RGB24, frame_width, frame_height);
 
     let data_vec = img.as_raw();
-    frm.data_mut(0).copy_from_slice(&data_vec);
+    frm.data_mut(0).copy_from_slice(data_vec);
 
     frm
 }

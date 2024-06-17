@@ -196,7 +196,17 @@ impl CapturePane {
                 let entry = entry.ok()?;
                 let path = entry.path();
                 let ext = path.extension()?.to_string_lossy().to_string();
-                if path.is_file() && all_known_extensions.contains(&ext) {
+
+                // Only generate thumbnails for:
+                // - files
+                // - files with known extensions
+                // - files that are at least 256 bytes in size, to avoid generating thumbnails for empty and corrupt files
+                let size_ok = entry
+                    .metadata()
+                    .ok()
+                    .map(|metadata| metadata.len() >= 256)
+                    .unwrap_or(false);
+                if path.is_file() && all_known_extensions.contains(&ext) && size_ok {
                     let metadata = entry.metadata().ok()?;
 
                     Some(GalleryElement {

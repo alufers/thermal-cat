@@ -272,10 +272,15 @@ impl ThermalCapturer {
             }
             loop {
                 let result = produce_result(&mut ctx);
+                let last_image_size = match result.as_ref() {
+                    Ok(res) => res.image.size.clone(),
+                    Err(err) => [0, 0],
+                };
                 if let Err(err) = ctx.result_sender.send(result) {
                     log::error!("Error sending result: {}", err);
                     break;
                 }
+
                 (ctx.callback)();
 
                 // drain the command queue
@@ -310,8 +315,8 @@ impl ThermalCapturer {
                             let settings = VideoRecordingSettings {
                                 format: settings.format,
                                 output_path: dir_path.join(PathBuf::from(filename)),
-                                height: 192,
-                                width: 256,
+                                width: last_image_size[0],
+                                height: last_image_size[1],
                                 framerate: ctx.camera.frame_rate() as usize,
                             };
                             ctx.current_recording_channel = Some(

@@ -19,7 +19,8 @@ use eframe::{
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
 use panes::{
-    capture_pane::{CapturePane, GalleryElement},
+    capture_pane::CapturePane,
+    gallery_pane::{GalleryElement, GalleryPane},
     histogram_pane::HistogramPane,
     measurements_pane::MeasurementsPane,
     setup_pane::SetupPane,
@@ -135,6 +136,7 @@ impl ThermalViewerApp {
             vec![
                 Box::new(HistogramPane::new(self.global_state.clone())),
                 Box::new(ChartPane::new(self.global_state.clone())),
+                Box::new(GalleryPane::new(self.global_state.clone())),
             ],
         );
 

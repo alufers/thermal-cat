@@ -16,12 +16,6 @@ use crate::{
     AppGlobalState,
 };
 
-#[derive(Debug, Clone)]
-pub struct GalleryElement {
-    pub path: PathBuf,
-    pub created_at: std::time::SystemTime,
-}
-
 pub struct CapturePane {
     global_state: Rc<RefCell<AppGlobalState>>,
     snapshot_format: ImageFormat,
@@ -44,9 +38,6 @@ impl Pane for CapturePane {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
-        if let Err(err) = self.init_gallery() {
-            eprintln!("Failed to initialize gallery: {:?}", err);
-        }
         let global_state_clone = self.global_state.clone();
         let mut global_state = global_state_clone.as_ref().borrow_mut();
 
@@ -146,91 +137,6 @@ impl Pane for CapturePane {
                 }
             });
         });
-
-        ui.separator();
-        ui.label("Gallery");
-        egui::ScrollArea::vertical()
-            .scroll_bar_visibility(ScrollBarVisibility::AlwaysVisible)
-            .show(ui, |ui| {
-                ui.vertical_centered(|ui| {
-                    for elem in &global_state.gallery {
-                        let base_name = elem.path.file_name().unwrap().to_string_lossy();
-
-                        ui.add(
-                            Image::new("file://".to_string() + elem.path.to_str().unwrap())
-                                .fit_to_exact_size(Vec2::new(150.0, 100.0))
-                                .maintain_aspect_ratio(true),
-                        );
-                        ui.label(base_name);
-                        ui.add_space(2.0);
-                    }
-                });
-            });
     }
 }
 
-impl CapturePane {
-    // Loads files from the captures directory and initializes the gallery
-    fn init_gallery(&mut self) -> Result<(), anyhow::Error> {
-        let global_state_clone = self.global_state.clone();
-        let mut global_state = global_state_clone.as_ref().borrow_mut();
-
-        if global_state.did_init_gallery {
-            return Ok(());
-        }
-        global_state.did_init_gallery = true;
-
-        let captures_dir = global_state
-            .prefs
-            .as_ref()
-            .map(|prefs| prefs.captures_directory.clone())
-            .unwrap_or("./".to_string());
-
-        let captures_dir = Path::new(&captures_dir);
-
-        if !captures_dir.exists() {
-            return Ok(());
-        }
-        let all_known_extensions = all_media_file_extensions();
-        let mut gallery_vec: Vec<GalleryElement> = captures_dir
-            .read_dir()?
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let path = entry.path();
-                let ext = path.extension()?.to_string_lossy().to_string();
-
-                // Only generate thumbnails for:
-                // - files
-                // - files with known extensions
-                // - files that are at least 256 bytes in size, to avoid generating thumbnails for empty and corrupt files
-                let size_ok = entry
-                    .metadata()
-                    .ok()
-                    .map(|metadata| metadata.len() >= 256)
-                    .unwrap_or(false);
-                if path.is_file() && all_known_extensions.contains(&ext) && size_ok {
-                    let metadata = entry.metadata().ok()?;
-
-                    Some(GalleryElement {
-                        path,
-                        created_at: metadata.created().ok()?,
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        gallery_vec.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-
-        // Limit the vector to the last 20 items
-        let last_items = gallery_vec.iter().rev().take(20).collect::<Vec<_>>();
-
-        global_state.gallery = VecDeque::with_capacity(20);
-        for item in last_items {
-            global_state.gallery.push_back(item.clone());
-        }
-
-        Ok(())
-    }
-}

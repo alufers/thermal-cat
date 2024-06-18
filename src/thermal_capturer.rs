@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{mpsc, Arc},
+    sync::{mpsc, Arc, Mutex},
     thread,
 };
 
@@ -18,6 +18,7 @@ use crate::{
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
     record_video::VideoRecordingSettings,
+    recorders::recorder::Recorder,
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
@@ -37,8 +38,6 @@ pub struct ThermalCapturerResult {
     pub gizmo_results: HashMap<Uuid, GizmoResult>,
     pub capture_time: std::time::Instant,
 
-    pub created_capture_file: Option<PathBuf>,
-
     pub is_recording_video: bool,
 }
 
@@ -50,6 +49,7 @@ pub struct ThermalCapturerSettings {
     pub rotation: ImageRotation,
     pub gizmo: Gizmo,
     pub dynamic_range_curve: DynamicRangeCurve,
+    pub recorders: Vec<Arc<Mutex<dyn Recorder>>>,
 }
 
 impl ThermalCapturerSettings {
@@ -66,12 +66,6 @@ impl ThermalCapturerSettings {
     }
 }
 
-#[derive(Clone)]
-pub struct SnapshotSettings {
-    pub dir_path: PathBuf,
-    pub image_format: ImageFormat,
-}
-
 /// Settings used when starting a video recording session from the UI thread
 pub struct StartVideoRecordingSettings {
     pub output_dir: PathBuf,
@@ -82,7 +76,6 @@ pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
-    TakeSnapshot(SnapshotSettings),
     StartVideoRecording(StartVideoRecordingSettings),
     StopVideoRecording,
     Stop,
@@ -97,8 +90,6 @@ struct ThermalCapturerCtx {
     settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
     last_frame_time: std::time::Instant,
-
-    scheduled_snapshot_settings: Option<SnapshotSettings>,
 
     current_recording_channel: Option<mpsc::Sender<RgbImage>>,
 }
@@ -132,7 +123,6 @@ impl ThermalCapturer {
                 settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
                 last_frame_time: std::time::Instant::now(),
-                scheduled_snapshot_settings: None,
                 current_recording_channel: None,
             }),
             cmd_sender,
@@ -214,10 +204,7 @@ impl ThermalCapturer {
                         _ => panic!("Unimplemented gizmo kind"),
                     });
 
-                let mut created_capture_file = None;
-
-                let is_capturing_current_frame = ctx.scheduled_snapshot_settings.is_some()
-                    || ctx.current_recording_channel.is_some();
+                let is_capturing_current_frame = ctx.current_recording_channel.is_some();
                 if is_capturing_current_frame {
                     let rgba_img = image::RgbaImage::from_raw(
                         image.width() as u32,
@@ -228,25 +215,6 @@ impl ThermalCapturer {
 
                     // Convert to Rgb8, we don't need the alpha channel
                     let img = rgba8_to_rgb8(rgba_img);
-
-                    if let Some(snapshot_settings) = ctx.scheduled_snapshot_settings.take() {
-                        let dir_path = snapshot_settings.dir_path;
-                        std::fs::create_dir_all(dir_path.clone())?;
-                        let current_local: DateTime<Local> = Local::now();
-
-                        let filename = format!(
-                            "{}_{}.{}",
-                            pathify_string(ctx.adapter.short_name()),
-                            current_local.format("%Y-%m-%d_%H-%M-%S"),
-                            snapshot_settings.image_format.extension()
-                        );
-
-                        let save_path = dir_path.join(PathBuf::from(filename));
-                        img.save(save_path.clone())?;
-                        ctx.scheduled_snapshot_settings = None;
-                        created_capture_file = Some(save_path);
-                    }
-
                     if let Some(recording_channel) = &ctx.current_recording_channel {
                         if let Err(err) = recording_channel.send(img) {
                             log::error!("Failed to send frame to recording channel: {}", err);
@@ -254,7 +222,7 @@ impl ThermalCapturer {
                     }
                 }
 
-                Ok(Box::new(ThermalCapturerResult {
+                let result = Box::new(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / ctx.last_frame_time.elapsed().as_secs_f32(),
                     reported_fps: ctx.camera.frame_rate() as f32,
@@ -266,9 +234,18 @@ impl ThermalCapturer {
                     ),
                     gizmo_results,
                     capture_time,
-                    created_capture_file,
+
                     is_recording_video: ctx.current_recording_channel.is_some(),
-                }))
+                });
+
+                for recorder in ctx.settings.recorders.iter() {
+                    let recorder = &mut recorder.lock().unwrap();
+                    if !recorder.is_done() {
+                        recorder.process_result(&result)?;
+                    }
+                }
+
+                Ok(result)
             }
             loop {
                 let result = produce_result(&mut ctx);
@@ -293,9 +270,6 @@ impl ThermalCapturer {
                         }
                         ThermalCapturerCmd::SetSettings(range_settings) => {
                             ctx.settings = range_settings;
-                        }
-                        ThermalCapturerCmd::TakeSnapshot(snapshot_settings) => {
-                            ctx.scheduled_snapshot_settings = Some(snapshot_settings);
                         }
                         ThermalCapturerCmd::StartVideoRecording(settings) => {
                             // TODO: move this somewhere else, along with snapshot saving,
@@ -338,12 +312,6 @@ impl ThermalCapturer {
     pub fn set_settings(&mut self, settings: ThermalCapturerSettings) {
         self.cmd_sender
             .send(ThermalCapturerCmd::SetSettings(settings))
-            .unwrap();
-    }
-
-    pub fn take_snapshot(&mut self, settings: SnapshotSettings) {
-        self.cmd_sender
-            .send(ThermalCapturerCmd::TakeSnapshot(settings))
             .unwrap();
     }
 

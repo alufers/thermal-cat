@@ -1,10 +1,16 @@
-use std::{cell::RefCell, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    path::PathBuf,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use eframe::egui::{self, Align, Button, Color32, Layout, Vec2};
 
 use crate::{
     pane_dispatcher::Pane,
-    thermal_capturer::{SnapshotSettings, StartVideoRecordingSettings},
+    recorders::image_recorder::ImageRecorder,
+    thermal_capturer::{StartVideoRecordingSettings},
     types::media_formats::{ImageFormat, VideoFormat},
     AppGlobalState,
 };
@@ -61,11 +67,18 @@ impl Pane for CapturePane {
                         .map(|prefs| prefs.captures_directory.clone())
                         .unwrap_or("./".to_string());
 
+                    global_state
+                        .thermal_capturer_settings
+                        .recorders
+                        .push(Arc::new(Mutex::new(ImageRecorder::new(
+                            PathBuf::from(captures_dir),
+                            "photo".to_string(),
+                            self.snapshot_format,
+                        ))));
+
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
                     if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
-                        thermal_capturer.take_snapshot(SnapshotSettings {
-                            dir_path: PathBuf::from(captures_dir),
-                            image_format: self.snapshot_format,
-                        })
+                        thermal_capturer.set_settings(settings_clone);
                     }
                 }
             });

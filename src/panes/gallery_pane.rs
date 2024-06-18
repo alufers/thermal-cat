@@ -58,7 +58,7 @@ impl Pane for GalleryPane {
                             // Hacky justification
                             let container_width =
                                 (available_width) / (available_width / ELEM_WIDTH).floor() - 8.0;
-                            println!("container_width: {}", container_width);
+
                             ui.add_sized(Vec2::new(container_width, 110.0), |ui: &mut Ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add(

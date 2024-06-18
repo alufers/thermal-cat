@@ -45,6 +45,7 @@ mod hotplug_detector;
 mod pane_dispatcher;
 mod panes;
 mod record_video;
+mod recorders;
 mod temperature;
 mod temperature_edit_field;
 mod thermal_capturer;
@@ -179,6 +180,7 @@ impl Default for ThermalViewerApp {
                     ),
                 ]),
                 dynamic_range_curve: DynamicRangeCurve::default(),
+                recorders: vec![],
             },
             last_thermal_capturer_result: None,
             hotplug_detector: None,
@@ -251,16 +253,40 @@ impl eframe::App for ThermalViewerApp {
                                     )
                                     .unwrap();
                                 // Add image to gallery if needed
-                                if let Some(saved_file) = result.created_capture_file.clone() {
-                                    borrowed_global_state.gallery.push_front(GalleryElement {
-                                        path: saved_file,
-                                        created_at: SystemTime::now(),
-                                    });
+                                // if let Some(saved_file) = result.created_capture_file.clone() {
+                                //     borrowed_global_state.gallery.push_front(GalleryElement {
+                                //         path: saved_file,
+                                //         created_at: SystemTime::now(),
+                                //     });
 
-                                    if borrowed_global_state.gallery.len() > 20 {
-                                        borrowed_global_state.gallery.pop_back();
-                                    }
-                                }
+                                //     if borrowed_global_state.gallery.len() > 20 {
+                                //         borrowed_global_state.gallery.pop_back();
+                                //     }
+                                // }
+
+                                let mut gallery_tmp = vec![];
+                                borrowed_global_state.thermal_capturer_settings.recorders =
+                                    borrowed_global_state
+                                        .thermal_capturer_settings
+                                        .recorders
+                                        .drain(..)
+                                        .filter(|recorder| {
+                                            let recorder = recorder.lock().unwrap();
+                                            if recorder.is_done() {
+                                                for file in recorder.files_created() {
+                                                    gallery_tmp.push(
+                                                        GalleryElement {
+                                                            path: file,
+                                                            created_at: SystemTime::now(),
+                                                        },
+                                                    );
+                                                }
+                                                return false;
+                                            }
+                                            true
+                                        })
+                                        .collect();
+                                borrowed_global_state.gallery.extend(gallery_tmp);
                                 borrowed_global_state.last_thermal_capturer_result = Some(result);
 
                                 had_result = true;

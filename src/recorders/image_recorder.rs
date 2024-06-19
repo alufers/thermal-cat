@@ -9,7 +9,7 @@ use crate::{
     util::{pathify_string, rgba8_to_rgb8},
 };
 
-use super::recorder::Recorder;
+use super::recorder::{Recorder, RecorderState};
 
 pub struct ImageRecorder {
     // Params
@@ -19,7 +19,7 @@ pub struct ImageRecorder {
 
     // Output info
     output_file: Option<PathBuf>,
-    is_done: bool,
+    curr_state: RecorderState,
 }
 
 impl ImageRecorder {
@@ -33,17 +33,17 @@ impl ImageRecorder {
             name_prefix,
             image_format,
             output_file: None,
-            is_done: false,
+            curr_state: RecorderState::Initial,
         }
     }
 }
 
 impl Recorder for ImageRecorder {
-
     fn start(
         &mut self,
         _params: super::recorder::RecorderStreamParams,
     ) -> Result<(), anyhow::Error> {
+        self.curr_state = RecorderState::Recording;
         // Ignore params, we only capture a single image.
         Ok(())
     }
@@ -73,12 +73,12 @@ impl Recorder for ImageRecorder {
         let save_path = self.destination_folder.join(PathBuf::from(filename));
         img.save(save_path.clone())?;
         self.output_file = Some(save_path);
-        self.is_done = true;
+        self.curr_state = RecorderState::Done;
         Ok(())
     }
 
-    fn is_done(&self) -> bool {
-        self.is_done
+    fn state(&self) -> RecorderState {
+        self.curr_state
     }
 
     fn files_created(&self) -> Vec<PathBuf> {
@@ -89,8 +89,7 @@ impl Recorder for ImageRecorder {
     }
 
     fn stop(&mut self) -> Result<(), anyhow::Error> {
-        self.is_done = true;
+        self.curr_state = RecorderState::Done;
         Ok(())
     }
 }
-

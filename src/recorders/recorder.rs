@@ -1,4 +1,4 @@
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use crate::thermal_capturer::ThermalCapturerResult;
 
@@ -6,6 +6,13 @@ pub struct RecorderStreamParams {
     pub width: usize,
     pub height: usize,
     pub framerate: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RecorderState {
+    Initial,
+    Recording,
+    Done,
 }
 
 ///
@@ -27,7 +34,7 @@ pub trait Recorder: Send + Sync {
     ///
     /// Shall return true once this recorder has done it's job and can be disposed of.
     ///
-    fn is_done(&self) -> bool;
+    fn state(&self) -> RecorderState;
 
     ///
     /// Return the paths to any files created by this recorder.

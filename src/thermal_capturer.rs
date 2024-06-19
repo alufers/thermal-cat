@@ -18,13 +18,13 @@ use crate::{
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
     record_video::VideoRecordingSettings,
-    recorders::recorder::Recorder,
+    recorders::recorder::{Recorder, RecorderState},
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
     types::{
         image_rotation::ImageRotation,
-        media_formats::{ImageFormat, VideoFormat},
+        media_formats::{VideoFormat},
     },
     util::{pathify_string, rgba8_to_rgb8},
 };
@@ -240,7 +240,7 @@ impl ThermalCapturer {
 
                 for recorder in ctx.settings.recorders.iter() {
                     let recorder = &mut recorder.lock().unwrap();
-                    if !recorder.is_done() {
+                    if recorder.state() != RecorderState::Done {
                         recorder.process_result(&result)?;
                     }
                 }

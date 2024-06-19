@@ -1,2 +1,2 @@
-pub mod recorder;
 pub mod image_recorder;
+pub mod recorder;

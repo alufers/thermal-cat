@@ -27,6 +27,7 @@ use panes::{
     thermal_display_pane::ThermalDisplayPane,
     user_preferences_pane::UserPreferencesPane,
 };
+use recorders::recorder::RecorderState;
 use temperature::{Temp, TempRange, TemperatureUnit};
 use thermal_capturer::{ThermalCapturer, ThermalCapturerResult, ThermalCapturerSettings};
 use types::image_rotation::ImageRotation;
@@ -272,14 +273,12 @@ impl eframe::App for ThermalViewerApp {
                                         .drain(..)
                                         .filter(|recorder| {
                                             let recorder = recorder.lock().unwrap();
-                                            if recorder.is_done() {
+                                            if recorder.state() == RecorderState::Done {
                                                 for file in recorder.files_created() {
-                                                    gallery_tmp.push(
-                                                        GalleryElement {
-                                                            path: file,
-                                                            created_at: SystemTime::now(),
-                                                        },
-                                                    );
+                                                    gallery_tmp.push(GalleryElement {
+                                                        path: file,
+                                                        created_at: SystemTime::now(),
+                                                    });
                                                 }
                                                 return false;
                                             }

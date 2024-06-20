@@ -45,7 +45,6 @@ mod history_data_collector;
 mod hotplug_detector;
 mod pane_dispatcher;
 mod panes;
-mod record_video;
 mod recorders;
 mod temperature;
 mod temperature_edit_field;

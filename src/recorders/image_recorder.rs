@@ -92,4 +92,8 @@ impl Recorder for ImageRecorder {
         self.curr_state = RecorderState::Done;
         Ok(())
     }
+
+    fn is_continuous(&self) -> bool {
+        false
+    }
 }

@@ -1,4 +1,6 @@
 use std::{
+    any::{Any, TypeId},
+    borrow::Borrow,
     cell::RefCell,
     path::PathBuf,
     rc::Rc,
@@ -9,8 +11,7 @@ use eframe::egui::{self, Align, Button, Color32, Layout, Vec2};
 
 use crate::{
     pane_dispatcher::Pane,
-    recorders::image_recorder::ImageRecorder,
-    thermal_capturer::StartVideoRecordingSettings,
+    recorders::{image_recorder::ImageRecorder, video_recorder::VideoRecorder},
     types::media_formats::{ImageFormat, VideoFormat},
     AppGlobalState,
 };
@@ -93,10 +94,15 @@ impl Pane for CapturePane {
                         available_width / 2.0 - 5.0,
                     );
                     let is_recording = global_state
-                        .last_thermal_capturer_result
-                        .as_ref()
-                        .map(|res| res.is_recording_video)
-                        .unwrap_or(false);
+                        .thermal_capturer_settings
+                        .recorders
+                        .iter_mut()
+                        .any(|recorder| {
+                            let recorder = recorder.lock().unwrap();
+                            recorder.is_continuous()
+                                && recorder.state()
+                                    != crate::recorders::recorder::RecorderState::Done
+                        });
 
                     if is_recording {
                         ui.scope(|ui| {
@@ -116,11 +122,27 @@ impl Pane for CapturePane {
                                 )
                                 .clicked()
                             {
-                                if let Some(thermal_capturer) =
-                                    global_state.thermal_capturer_inst.as_mut()
-                                {
-                                    thermal_capturer.stop_video_recording()
-                                }
+                                let _ = global_state
+                                    .thermal_capturer_settings
+                                    .recorders
+                                    .iter()
+                                    .find(|recorder| {
+                                        let recorder = recorder.lock().unwrap();
+                                        recorder.is_continuous()
+                                            && recorder.state()
+                                                != crate::recorders::recorder::RecorderState::Done
+                                    })
+                                    .ok_or(anyhow::anyhow!(
+                                        "No active video recorder found to stop"
+                                    ))
+                                    .and_then(|rec| {
+                                        rec.lock()
+                                            .map_err(|_| anyhow::anyhow!("Failed to lock recorder"))
+                                    })
+                                    .map(|mut rec| rec.stop())
+                                    .inspect_err(|err| {
+                                        log::error!("Failed to stop video recording: {}", err)
+                                    });
                             }
                         });
                     } else if ui
@@ -139,12 +161,18 @@ impl Pane for CapturePane {
                             .map(|prefs| prefs.captures_directory.clone())
                             .unwrap_or("./".to_string());
 
+                        global_state
+                            .thermal_capturer_settings
+                            .recorders
+                            .push(Arc::new(Mutex::new(VideoRecorder::new(
+                                PathBuf::from(captures_dir),
+                                "video".to_string(),
+                                self.video_format,
+                            ))));
+                        let settings_clone = global_state.thermal_capturer_settings.clone();
                         if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut()
                         {
-                            thermal_capturer.start_video_recording(StartVideoRecordingSettings {
-                                output_dir: PathBuf::from(captures_dir),
-                                format: self.video_format,
-                            })
+                            thermal_capturer.set_settings(settings_clone);
                         }
                     }
                 });

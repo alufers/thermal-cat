@@ -17,15 +17,11 @@ use crate::{
     camera_adapter::CameraAdapter,
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
-    record_video::VideoRecordingSettings,
-    recorders::recorder::{Recorder, RecorderState},
+    recorders::recorder::{Recorder, RecorderState, RecorderStreamParams},
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
-    types::{
-        image_rotation::ImageRotation,
-        media_formats::{VideoFormat},
-    },
+    types::{image_rotation::ImageRotation, media_formats::VideoFormat},
     util::{pathify_string, rgba8_to_rgb8},
 };
 
@@ -37,8 +33,6 @@ pub struct ThermalCapturerResult {
     pub histogram: ThermalDataHistogram,
     pub gizmo_results: HashMap<Uuid, GizmoResult>,
     pub capture_time: std::time::Instant,
-
-    pub is_recording_video: bool,
 }
 
 #[derive(Clone)]
@@ -66,18 +60,12 @@ impl ThermalCapturerSettings {
     }
 }
 
-/// Settings used when starting a video recording session from the UI thread
-pub struct StartVideoRecordingSettings {
-    pub output_dir: PathBuf,
-    pub format: VideoFormat,
-}
+
 
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {
     SetSettings(ThermalCapturerSettings),
-    StartVideoRecording(StartVideoRecordingSettings),
-    StopVideoRecording,
     Stop,
 }
 
@@ -90,8 +78,6 @@ struct ThermalCapturerCtx {
     settings: ThermalCapturerSettings,
     auto_range_controller: AutoDisplayRangeController,
     last_frame_time: std::time::Instant,
-
-    current_recording_channel: Option<mpsc::Sender<RgbImage>>,
 }
 
 pub struct ThermalCapturer {
@@ -123,7 +109,6 @@ impl ThermalCapturer {
                 settings: default_settings,
                 auto_range_controller: AutoDisplayRangeController::new(),
                 last_frame_time: std::time::Instant::now(),
-                current_recording_channel: None,
             }),
             cmd_sender,
             result_receiver,
@@ -204,24 +189,6 @@ impl ThermalCapturer {
                         _ => panic!("Unimplemented gizmo kind"),
                     });
 
-                let is_capturing_current_frame = ctx.current_recording_channel.is_some();
-                if is_capturing_current_frame {
-                    let rgba_img = image::RgbaImage::from_raw(
-                        image.width() as u32,
-                        image.height() as u32,
-                        image.as_raw().into(),
-                    )
-                    .ok_or(anyhow!("Failed to create image when saving snapshot"))?;
-
-                    // Convert to Rgb8, we don't need the alpha channel
-                    let img = rgba8_to_rgb8(rgba_img);
-                    if let Some(recording_channel) = &ctx.current_recording_channel {
-                        if let Err(err) = recording_channel.send(img) {
-                            log::error!("Failed to send frame to recording channel: {}", err);
-                        }
-                    }
-                }
-
                 let result = Box::new(ThermalCapturerResult {
                     image,
                     real_fps: 1.0 / ctx.last_frame_time.elapsed().as_secs_f32(),
@@ -234,12 +201,17 @@ impl ThermalCapturer {
                     ),
                     gizmo_results,
                     capture_time,
-
-                    is_recording_video: ctx.current_recording_channel.is_some(),
                 });
 
                 for recorder in ctx.settings.recorders.iter() {
                     let recorder = &mut recorder.lock().unwrap();
+                    if recorder.state() == RecorderState::Initial {
+                        recorder.start(RecorderStreamParams {
+                            width: result.image.size[0],
+                            height: result.image.size[1],
+                            framerate: ctx.camera.frame_rate() as usize,
+                        })?;
+                    }
                     if recorder.state() != RecorderState::Done {
                         recorder.process_result(&result)?;
                     }
@@ -271,39 +243,6 @@ impl ThermalCapturer {
                         ThermalCapturerCmd::SetSettings(range_settings) => {
                             ctx.settings = range_settings;
                         }
-                        ThermalCapturerCmd::StartVideoRecording(settings) => {
-                            // TODO: move this somewhere else, along with snapshot saving,
-                            let dir_path = settings.output_dir;
-                            let _ = std::fs::create_dir_all(dir_path.clone()).inspect_err(|err| {
-                                log::error!("Failed to create directory: {}", err);
-                            });
-                            let current_local: DateTime<Local> = Local::now();
-
-                            let filename = format!(
-                                "{}_{}.{}",
-                                pathify_string(ctx.adapter.short_name()),
-                                current_local.format("%Y-%m-%d_%H-%M-%S"),
-                                settings.format.extension()
-                            );
-
-                            let settings = VideoRecordingSettings {
-                                format: settings.format,
-                                output_path: dir_path.join(PathBuf::from(filename)),
-                                width: last_image_size[0],
-                                height: last_image_size[1],
-                                framerate: ctx.camera.frame_rate() as usize,
-                            };
-                            ctx.current_recording_channel = Some(
-                                crate::record_video::record_video(settings)
-                                    .inspect_err(|err| {
-                                        log::error!("Failed to start recording: {}", err);
-                                    })
-                                    .unwrap(),
-                            );
-                        }
-                        ThermalCapturerCmd::StopVideoRecording => {
-                            ctx.current_recording_channel = None;
-                        }
                     }
                 }
             }
@@ -312,18 +251,6 @@ impl ThermalCapturer {
     pub fn set_settings(&mut self, settings: ThermalCapturerSettings) {
         self.cmd_sender
             .send(ThermalCapturerCmd::SetSettings(settings))
-            .unwrap();
-    }
-
-    pub fn start_video_recording(&mut self, settings: StartVideoRecordingSettings) {
-        self.cmd_sender
-            .send(ThermalCapturerCmd::StartVideoRecording(settings))
-            .unwrap();
-    }
-
-    pub fn stop_video_recording(&mut self) {
-        self.cmd_sender
-            .send(ThermalCapturerCmd::StopVideoRecording)
             .unwrap();
     }
 }

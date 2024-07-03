@@ -11,7 +11,7 @@ anyhow = "1.0.81"
 chrono = "0.4.38"
 dirs = "5.0.1"
 eframe = { version = "0.27.2", features = ["wgpu"] }
-egui_dock = "0.12.0"
+egui_dock = "0.13.0"
 egui_extras = { version = "0.27.2", features = ["svg", "image", "file"] }
 egui_plot = "0.27.2"
 env_logger = "0.11.3"

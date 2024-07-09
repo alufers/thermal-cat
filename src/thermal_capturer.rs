@@ -60,8 +60,6 @@ impl ThermalCapturerSettings {
     }
 }
 
-
-
 pub type ThermalCapturerCallback = Arc<dyn Fn() + Send + Sync>;
 
 enum ThermalCapturerCmd {

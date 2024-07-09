@@ -23,9 +23,6 @@ pub struct ThermalDisplayPane {
     camera_texture: Option<egui::TextureHandle>,
     camera_image_size: Option<(usize, usize)>,
 
-    crosshair_texture_load_result: Option<TextureLoadResult>,
-    crosshair_texture: Option<egui::TextureHandle>,
-
     zoom_to_fit: bool,
     external_zoom_factor: f64,
     external_zoom_factor_changed: bool,
@@ -38,8 +35,7 @@ impl ThermalDisplayPane {
         ThermalDisplayPane {
             global_state,
             camera_texture: None,
-            crosshair_texture_load_result: None,
-            crosshair_texture: None,
+
             camera_image_size: None,
             zoom_to_fit: true,
             external_zoom_factor: 1.0,
@@ -172,25 +168,6 @@ impl Pane for ThermalDisplayPane {
                 .map(|r| r.gizmo_results.clone())
                 .clone();
 
-            self.crosshair_texture_load_result.get_or_insert_with(|| {
-                egui::include_image!("../icons/crosshair_center.svg").load(
-                    ui.ctx(),
-                    TextureOptions::default(),
-                    SizeHint::Scale(5.0.into()),
-                )
-            });
-            if self.crosshair_texture.is_none() {
-                if let TexturePoll::Ready { texture } = self
-                    .crosshair_texture_load_result
-                    .as_ref()
-                    .unwrap()
-                    .as_ref()
-                    .unwrap()
-                {
-                    self.crosshair_texture =
-                        Some(TextureHandle::new(ui.ctx().tex_manager(), texture.id))
-                }
-            }
             ui.vertical(|ui| {
                 self.build_toolbar_ui(ui, &mut global_state);
                 if let Some(texture) = self.camera_texture.as_ref() {
@@ -388,7 +365,7 @@ pub fn zoom_edit_field(ui: &mut Ui, zoom_value: &mut f64) -> Response {
             .speed(3.0)
             .max_decimals(0)
             .suffix("%")
-            .clamp_range(10.0..=1000.0),
+            .clamp(10.0..=1000.0),
     );
     *zoom_value = tmp_value / 100.0;
     res

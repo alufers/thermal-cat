@@ -259,7 +259,7 @@ pub fn dynamic_curve_editor(
         .height(250.0)
         // .data_aspect(1.0)
         // .view_aspect(1.0)
-        .x_axis_formatter(move |grid_mark, _, _| {
+        .x_axis_formatter(move |grid_mark, _| {
             format!(
                 "{:.0} {}",
                 current_range

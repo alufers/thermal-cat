@@ -80,7 +80,7 @@ fn main() -> Result<(), eframe::Error> {
             cc.egui_ctx
                 .add_image_loader(std::sync::Arc::new(VideoThumbnailLoader::default()));
 
-            Box::<ThermalViewerApp>::default()
+            Ok(Box::<ThermalViewerApp>::default())
         }),
     )
 }

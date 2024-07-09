@@ -1,14 +1,11 @@
 use std::{
     collections::HashMap,
-    path::PathBuf,
     sync::{mpsc, Arc, Mutex},
     thread,
 };
 
 use anyhow::{anyhow, Error};
-use chrono::{DateTime, Local};
 use eframe::epaint::{Color32, ColorImage};
-use image::RgbImage;
 use nokhwa::Camera;
 use uuid::Uuid;
 
@@ -21,8 +18,7 @@ use crate::{
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
-    types::{image_rotation::ImageRotation, media_formats::VideoFormat},
-    util::{pathify_string, rgba8_to_rgb8},
+    types::{image_rotation::ImageRotation},
 };
 
 pub struct ThermalCapturerResult {
@@ -219,10 +215,6 @@ impl ThermalCapturer {
             }
             loop {
                 let result = produce_result(&mut ctx);
-                let last_image_size = match result.as_ref() {
-                    Ok(res) => res.image.size,
-                    Err(_) => [0, 0],
-                };
                 if let Err(err) = ctx.result_sender.send(result) {
                     log::error!("Error sending result: {}", err);
                     break;

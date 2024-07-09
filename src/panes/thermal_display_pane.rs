@@ -3,12 +3,11 @@ use std::{cell::RefCell, rc::Rc};
 use eframe::{
     egui::{
         self,
-        load::{TextureLoadResult, TexturePoll},
-        Button, DragValue, Image, Layout, Response, RichText, SizeHint, Slider, TextureOptions, Ui,
+        Button, DragValue, Image, Layout, Response, RichText, Slider, TextureOptions, Ui,
         Widget,
     },
     emath::Align2,
-    epaint::{Color32, TextureHandle, Vec2},
+    epaint::{Color32, Vec2},
 };
 use egui_plot::{MarkerShape, Plot, PlotBounds, PlotImage, PlotPoint, Points, Text};
 
@@ -365,7 +364,7 @@ pub fn zoom_edit_field(ui: &mut Ui, zoom_value: &mut f64) -> Response {
             .speed(3.0)
             .max_decimals(0)
             .suffix("%")
-            .clamp_range(10.0..=1000.0),
+            .range(10.0..=1000.0),
     );
     *zoom_value = tmp_value / 100.0;
     res

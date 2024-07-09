@@ -24,7 +24,9 @@ pub fn temperature_range_edit_field(
     let mut did_change = false;
     let mut resp = egui::Grid::new(id_source)
         .show(ui, |ui| {
-            ui.set_enabled(enabled);
+            if !enabled {
+                ui.disable();
+            }
             ui.label("Min");
             ui.label("Max");
             ui.end_row();

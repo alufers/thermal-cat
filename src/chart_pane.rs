@@ -81,10 +81,10 @@ impl Pane for ChartPane {
                 "Temperature ({})",
                 global_state.preferred_temperature_unit().suffix()
             ))
-            .y_axis_formatter(move |grid_mark, _max_chars, _range| {
+            .y_axis_formatter(move |grid_mark, _range| {
                 format!("{:.0} {}", grid_mark.value, unit_suffix)
             })
-            .x_axis_formatter(move |grid_mark, _max_chars, _range| {
+            .x_axis_formatter(move |grid_mark, _range| {
                 let dur = Duration::from_secs_f64(grid_mark.value.abs());
                 ChartPane::duration_to_string(dur)
             })

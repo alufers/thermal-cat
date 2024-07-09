@@ -47,11 +47,10 @@ pub trait Recorder: Send + Sync {
     ///
     fn stop(&mut self) -> Result<(), anyhow::Error>;
 
-
     ///
     /// Whether this recorder records for more than one frame
     /// Enables the "Stop recording" button, disables operations which may
     /// change the image format.
-    /// 
+    ///
     fn is_continuous(&self) -> bool;
 }

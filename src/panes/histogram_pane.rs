@@ -77,8 +77,8 @@ impl Pane for HistogramPane {
             ))
             .include_y(0.0)
             .include_y(30.0)
-            .y_axis_formatter(|grid_mark, _max_chars, _range| format!("{:.0}%", grid_mark.value))
-            .x_axis_formatter(move |grid_mark, _max_chars, _range| {
+            .y_axis_formatter(|grid_mark, _range| format!("{:.0}%", grid_mark.value))
+            .x_axis_formatter(move |grid_mark, _range| {
                 format!("{:.0} {}", grid_mark.value, unit_suffix)
             })
             .show(ui, |plot_ui| {

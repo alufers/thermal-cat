@@ -365,7 +365,7 @@ pub fn zoom_edit_field(ui: &mut Ui, zoom_value: &mut f64) -> Response {
             .speed(3.0)
             .max_decimals(0)
             .suffix("%")
-            .clamp(10.0..=1000.0),
+            .clamp_range(10.0..=1000.0),
     );
     *zoom_value = tmp_value / 100.0;
     res

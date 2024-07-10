@@ -2,8 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{
     egui::{
-        self,
-        Button, DragValue, Image, Layout, Response, RichText, Slider, TextureOptions, Ui,
+        self, Button, DragValue, Image, Layout, Response, RichText, Slider, TextureOptions, Ui,
         Widget,
     },
     emath::Align2,

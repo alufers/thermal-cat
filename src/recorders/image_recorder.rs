@@ -14,7 +14,6 @@ use super::recorder::{Recorder, RecorderState};
 pub struct ImageRecorder {
     // Params
     destination_folder: PathBuf,
-    name_prefix: String,
     image_format: ImageFormat,
 
     // Output info
@@ -23,14 +22,9 @@ pub struct ImageRecorder {
 }
 
 impl ImageRecorder {
-    pub fn new(
-        destination_folder: PathBuf,
-        name_prefix: String,
-        image_format: ImageFormat,
-    ) -> ImageRecorder {
+    pub fn new(destination_folder: PathBuf, image_format: ImageFormat) -> ImageRecorder {
         ImageRecorder {
             destination_folder,
-            name_prefix,
             image_format,
             output_file: None,
             curr_state: RecorderState::Initial,
@@ -65,7 +59,7 @@ impl Recorder for ImageRecorder {
 
         let filename = format!(
             "{}_{}.{}",
-            pathify_string(self.name_prefix.clone()),
+            pathify_string(result.camera_short_name.clone()),
             current_local.format("%Y-%m-%d_%H-%M-%S"),
             self.image_format.extension()
         );

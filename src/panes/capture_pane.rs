@@ -72,7 +72,6 @@ impl Pane for CapturePane {
                             .recorders
                             .push(Arc::new(Mutex::new(ImageRecorder::new(
                                 PathBuf::from(captures_dir),
-                                "photo".to_string(),
                                 self.snapshot_format,
                             ))));
 

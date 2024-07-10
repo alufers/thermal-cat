@@ -18,7 +18,7 @@ use crate::{
     temperature::{Temp, TempRange},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
-    types::{image_rotation::ImageRotation},
+    types::image_rotation::ImageRotation,
 };
 
 pub struct ThermalCapturerResult {
@@ -29,6 +29,7 @@ pub struct ThermalCapturerResult {
     pub histogram: ThermalDataHistogram,
     pub gizmo_results: HashMap<Uuid, GizmoResult>,
     pub capture_time: std::time::Instant,
+    pub camera_short_name: String,
 }
 
 #[derive(Clone)]
@@ -154,7 +155,6 @@ impl ThermalCapturer {
                             gizmo_results.insert(
                                 g.uuid,
                                 GizmoResult {
-                                    uuid: g.uuid,
                                     temperature: captured_range.max,
                                     pos: maxtemp_pos,
                                 },
@@ -164,7 +164,6 @@ impl ThermalCapturer {
                             gizmo_results.insert(
                                 g.uuid,
                                 GizmoResult {
-                                    uuid: g.uuid,
                                     temperature: captured_range.min,
                                     pos: mintemp_pos,
                                 },
@@ -174,7 +173,6 @@ impl ThermalCapturer {
                             gizmo_results.insert(
                                 g.uuid,
                                 GizmoResult {
-                                    uuid: g.uuid,
                                     temperature: thermal_data.temperature_at(pos.x, pos.y),
                                     pos,
                                 },
@@ -195,6 +193,7 @@ impl ThermalCapturer {
                     ),
                     gizmo_results,
                     capture_time,
+                    camera_short_name: ctx.adapter.short_name(),
                 });
 
                 for recorder in ctx.settings.recorders.iter() {

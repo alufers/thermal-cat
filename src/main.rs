@@ -19,7 +19,14 @@ use eframe::{
 };
 use pane_dispatcher::{Pane, PaneDispatcher};
 use panes::{
-    capture_pane::CapturePane, performance_stats_pane::PerformanceStatsPane, gallery_pane::{GalleryElement, GalleryPane}, histogram_pane::HistogramPane, measurements_pane::MeasurementsPane, setup_pane::SetupPane, thermal_display_pane::ThermalDisplayPane, user_preferences_pane::UserPreferencesPane
+    capture_pane::CapturePane,
+    gallery_pane::{GalleryElement, GalleryPane},
+    histogram_pane::HistogramPane,
+    measurements_pane::MeasurementsPane,
+    performance_stats_pane::PerformanceStatsPane,
+    setup_pane::SetupPane,
+    thermal_display_pane::ThermalDisplayPane,
+    user_preferences_pane::UserPreferencesPane,
 };
 use recorders::recorder::RecorderState;
 use temperature::{Temp, TempRange, TemperatureUnit};
@@ -303,11 +310,10 @@ impl eframe::App for ThermalViewerApp {
                 });
                 ui.menu_button("Window", |ui| {
                     if ui.button("Performance stats").clicked() {
-                        self.dock_state.add_window(vec![Box::new(
-                            PerformanceStatsPane::new(
+                        self.dock_state
+                            .add_window(vec![Box::new(PerformanceStatsPane::new(
                                 self.global_state.clone(),
-                            ),
-                        )]);
+                            ))]);
                     }
                     if ui.button("Reset Layout").clicked() {
                         self.set_default_dock_state();

@@ -65,7 +65,6 @@ impl Gizmo {
 
 #[derive(Clone)]
 pub struct GizmoResult {
-    pub uuid: Uuid,
     pub temperature: Temp,
     pub pos: ThermalDataPos,
 }

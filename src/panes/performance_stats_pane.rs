@@ -1,19 +1,9 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    time::{Instant, SystemTime, UNIX_EPOCH},
-};
+use std::{cell::RefCell, rc::Rc, time::Instant};
 
-use crate::{
-    pane_dispatcher::Pane, temperature::TemperatureUnit, user_preferences::UserPreferences,
-    AppGlobalState,
-};
-use anyhow::Context;
+use crate::{pane_dispatcher::Pane, AppGlobalState};
 use eframe::egui::{self, Grid, Vec2b};
 use egui_plot::{HLine, Line, Plot};
-use log::error;
 use once_cell::sync::Lazy;
-use strum::IntoEnumIterator;
 
 const CHART_SAMPLES: usize = 200;
 
@@ -39,7 +29,7 @@ impl Pane for PerformanceStatsPane {
     }
     fn ui(&mut self, ui: &mut egui::Ui) {
         let global_state_clone = self.global_state.clone();
-        let mut global_state = global_state_clone.as_ref().borrow_mut();
+        let global_state = global_state_clone.as_ref().borrow_mut();
 
         let curr_time_sec = global_state
             .last_thermal_capturer_result

@@ -2,8 +2,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{
     egui::{
-        self, Button, DragValue, Image, Layout, Response, RichText, Slider, TextureOptions, Ui,
-        Widget,
+        self, Button, DragValue, Image, Layout, Pos2, Response, RichText, Slider, TextureOptions,
+        Ui, Widget,
     },
     emath::Align2,
     epaint::{Color32, Vec2},
@@ -25,6 +25,9 @@ pub struct ThermalDisplayPane {
     external_zoom_factor: f64,
     external_zoom_factor_changed: bool,
 
+    // Uuid of the gizmo which currently has its context menu open
+    gizmo_context_menu_uuid: Option<uuid::Uuid>,
+
     maximized: bool,
 }
 
@@ -39,6 +42,8 @@ impl ThermalDisplayPane {
             external_zoom_factor: 1.0,
             external_zoom_factor_changed: false,
             maximized: false,
+
+            gizmo_context_menu_uuid: None,
         }
     }
 
@@ -171,9 +176,13 @@ impl Pane for ThermalDisplayPane {
                 if let Some(texture) = self.camera_texture.as_ref() {
                     let img_size = self.camera_image_size.unwrap();
 
+                    const POINT_GIZMO_SIZE: f32 = 12.0;
+
                     let plot_response = Plot::new("thermal_display_plot")
                         .show_grid(false)
                         .show_axes(false)
+                        .show_y(false)
+                        .show_x(false)
                         .allow_boxed_zoom(false)
                         .allow_double_click_reset(false)
                         .allow_zoom(false)
@@ -182,7 +191,7 @@ impl Pane for ThermalDisplayPane {
                         .data_aspect(1.0)
                         .show(ui, |plot_ui| {
                             if self.zoom_to_fit {
-                                // let's manually set the bounds we need
+                                // let's manually set the bounds we need to fit the image from the camera
 
                                 let center_x = img_size.0 as f64 / 2.0;
                                 let center_y = img_size.1 as f64 / 2.0;
@@ -199,6 +208,7 @@ impl Pane for ThermalDisplayPane {
                                 ));
                             }
 
+                            // if zoom was changed manually from the slider, update the plot bounds
                             if self.external_zoom_factor_changed {
                                 self.external_zoom_factor_changed = false;
                                 let curr_zoom_factor = (img_size.0 as f64
@@ -220,6 +230,48 @@ impl Pane for ThermalDisplayPane {
                             ));
 
                             let temp_unit = global_state.preferred_temperature_unit();
+
+                            let mut get_gizmo_under_screen_pos = |screen_pos_to_check: Pos2| {
+                                global_state
+                                    .thermal_capturer_settings
+                                    .gizmo
+                                    .children_mut()
+                                    .unwrap()
+                                    .iter()
+                                    .find(|gizmo| match gizmo.kind {
+                                        GizmoKind::TempAt { pos } => {
+                                            let gizmo_screen_pos = plot_ui.screen_from_plot(
+                                                [pos.x as f64, img_size.1 as f64 - pos.y as f64]
+                                                    .into(),
+                                            );
+                                            screen_pos_to_check.distance(gizmo_screen_pos)
+                                                < POINT_GIZMO_SIZE
+                                        }
+                                        _ => false,
+                                    })
+                                    .map(|gizmo| gizmo.uuid)
+                            };
+
+                            let mut hovered_gizmo = None;
+
+                            let mut interact_gizmo = None;
+
+                            // check if any gizmo was hovered
+                            if plot_ui.response().hovered() {
+                                if let Some(pointer_pos) =
+                                    plot_ui.ctx().input(|inp| inp.pointer.latest_pos())
+                                {
+                                    hovered_gizmo = get_gizmo_under_screen_pos(pointer_pos);
+                                }
+                            }
+
+                            if let Some(pointer_pos) = plot_ui
+                                .ctx()
+                                .input(|inp: &egui::InputState| inp.pointer.interact_pos())
+                            {
+                                interact_gizmo = get_gizmo_under_screen_pos(pointer_pos);
+                            }
+
                             global_state
                                 .thermal_capturer_settings
                                 .gizmo
@@ -238,24 +290,33 @@ impl Pane for ThermalDisplayPane {
 
                                         let _size = 10.0;
 
+                                        let background_opacity = if Some(c.uuid) == hovered_gizmo {
+                                            0.5
+                                        } else {
+                                            0.3
+                                        };
+
                                         plot_ui.points(
                                             Points::new(vec![[x, y]])
                                                 .shape(MarkerShape::Circle)
-                                                .radius(12.0)
+                                                .radius(POINT_GIZMO_SIZE)
                                                 .filled(true)
-                                                .color(Color32::BLACK.gamma_multiply(0.3)),
+                                                .color(
+                                                    Color32::BLACK
+                                                        .gamma_multiply(background_opacity),
+                                                ),
                                         );
                                         plot_ui.points(
                                             Points::new(vec![[x, y]])
                                                 .shape(MarkerShape::Circle)
-                                                .radius(8.0)
+                                                .radius(POINT_GIZMO_SIZE * 0.66)
                                                 .filled(false)
                                                 .color(Color32::WHITE),
                                         );
                                         plot_ui.points(
                                             Points::new(vec![[x, y]])
                                                 .shape(MarkerShape::Plus)
-                                                .radius(12.0)
+                                                .radius(POINT_GIZMO_SIZE)
                                                 .color(c.color),
                                         );
 
@@ -280,7 +341,8 @@ impl Pane for ThermalDisplayPane {
                                     }
                                 });
 
-                            if plot_ui.response().clicked() {
+                            // Adding gizmos by clicking, if the plot is clicked and no gizmo is hovered
+                            if plot_ui.response().clicked() && hovered_gizmo.is_none() {
                                 let pos = plot_ui.pointer_coordinate().unwrap();
                                 let x = pos.x as usize;
                                 let y = pos.y as usize;
@@ -302,6 +364,15 @@ impl Pane for ThermalDisplayPane {
                                 }
                             }
 
+                            // handle right click
+                            if plot_ui
+                                .response()
+                                .clicked_by(egui::PointerButton::Secondary)
+                            {
+                                self.gizmo_context_menu_uuid = interact_gizmo;
+                            }
+
+                            // handle zooming (with the scroll wheel, or touchpad gestures)
                             if plot_ui.response().hovered() {
                                 let zoom_delta = plot_ui.ctx().input(|inp| {
                                     // try to get zoom delta from 3 different sources
@@ -331,6 +402,8 @@ impl Pane for ThermalDisplayPane {
                                     ))
                                 }
                             }
+
+                            // handle draging with middle button
                             if plot_ui.response().dragged_by(egui::PointerButton::Middle) {
                                 self.zoom_to_fit = false;
                                 let delta = plot_ui.response().drag_delta();
@@ -343,9 +416,62 @@ impl Pane for ThermalDisplayPane {
                             }
                         });
 
+                    // update external_zoom_factor so that the slider is in sync with the plot zoom
                     self.external_zoom_factor = (img_size.0 as f64
                         / plot_response.transform.bounds().width())
-                    .max(img_size.1 as f64 / plot_response.transform.bounds().height())
+                    .max(img_size.1 as f64 / plot_response.transform.bounds().height());
+
+                    if let Some(context_emnu_gizmo_uuid) = self.gizmo_context_menu_uuid {
+                        let gizmo = global_state
+                            .thermal_capturer_settings
+                            .gizmo
+                            .children_mut()
+                            .unwrap()
+                            .iter_mut()
+                            .find(|gizmo| gizmo.uuid == context_emnu_gizmo_uuid);
+
+                        match gizmo {
+                            Some(gizmo) => {
+                                let gizmo_name = gizmo.name.clone();
+                                plot_response.response.context_menu(|ui| {
+                                    ui.label(format!("Measurement: {}", gizmo_name));
+                                    if ui.button("Delete").clicked() {
+                                        global_state
+                                            .thermal_capturer_settings
+                                            .gizmo
+                                            .children_mut()
+                                            .unwrap()
+                                            .retain(|g| g.uuid != context_emnu_gizmo_uuid);
+
+                                        let settings_clone =
+                                            global_state.thermal_capturer_settings.clone();
+                                        if let Some(thermal_capturer) =
+                                            global_state.thermal_capturer_inst.as_mut()
+                                        {
+                                            thermal_capturer.set_settings(settings_clone);
+                                        }
+                                        return; // prevent the rendering of the rest of the context menu after deletion
+                                    }
+                                    let gizmo = global_state
+                                        .thermal_capturer_settings
+                                        .gizmo
+                                        .children_mut()
+                                        .unwrap()
+                                        .iter_mut()
+                                        .find(|gizmo| gizmo.uuid == context_emnu_gizmo_uuid)
+                                        .unwrap();
+
+                                    ui.checkbox(
+                                        &mut gizmo.show_temperature_label,
+                                        "Show temperature",
+                                    );
+                                });
+                            }
+                            None => {
+                                self.gizmo_context_menu_uuid = None;
+                            }
+                        }
+                    }
                 }
             });
         });

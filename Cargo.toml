@@ -34,7 +34,7 @@ strum_macros = "0.26.2"
 
 
 [dependencies.winit]
-version = "0.30.3"
+version = "0.30.4"
 features = ["wayland"]
 
 

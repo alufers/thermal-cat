@@ -16,7 +16,7 @@ egui_extras = { version = "0.28.1", features = ["svg", "image", "file"] }
 egui_plot = "0.28.1"
 env_logger = "0.11.3"
 ffmpeg-next = "7.0.0"
-image = { version = "0.25.1", features = ["jpeg", "png"] }
+image = { version = "0.25.2", features = ["jpeg", "png"] }
 imageproc = "0.25.0"
 log = "0.4.22"
 nokhwa = { git = "https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-macos-usb-camera", features = [

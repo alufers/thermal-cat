@@ -14,7 +14,7 @@ eframe = { version = "0.28.1", features = ["wgpu"] }
 egui_dock = "0.13.0"
 egui_extras = { version = "0.28.1", features = ["svg", "image", "file"] }
 egui_plot = "0.28.1"
-env_logger = "0.11.3"
+env_logger = "0.11.5"
 ffmpeg-next = "7.0.0"
 image = { version = "0.25.1", features = ["jpeg", "png"] }
 imageproc = "0.25.0"

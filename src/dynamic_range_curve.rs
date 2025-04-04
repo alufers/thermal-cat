@@ -299,7 +299,7 @@ pub fn dynamic_curve_editor(
 
             // draw line
             let n = plot_ui.response().rect.width() as i32 / 4;
-            let line_points: PlotPoints = (0..=n)
+            let line_points: PlotPoints<'_> = (0..=n)
                 .map(|i| {
                     let x = i as f32 / n as f32;
                     [x as f64, curve.get_value(x) as f64]

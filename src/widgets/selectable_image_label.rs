@@ -1,8 +1,6 @@
 use eframe::{
     egui::{
-        load::{TextureLoadResult, TexturePoll},
-        paint_texture_at, Image, ImageOptions, Rect, Response, Sense, Spinner, TextStyle, Ui,
-        Widget, WidgetInfo, WidgetType,
+        load::{TextureLoadResult, TexturePoll}, paint_texture_at, Image, ImageOptions, Rect, Response, Sense, Spinner, StrokeKind, TextStyle, Ui, Widget, WidgetInfo, WidgetType
     },
     emath::Align2,
     epaint::Vec2,
@@ -79,9 +77,10 @@ impl<'a> Widget for SelectableImageLabel<'a> {
 
                 ui.painter().rect(
                     rect,
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.weak_bg_fill,
                     visuals.bg_stroke,
+                    StrokeKind::Middle,
                 );
             }
 

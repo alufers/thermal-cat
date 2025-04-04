@@ -70,6 +70,7 @@ impl SetupPane {
             .selected_camera_info()
             .and_then(|i| i.adapter.as_ref())
             .context("No camera selected")?;
+        
         let cloned_ctx = ctx.clone();
         let cloned_adapter = adapter.clone();
 

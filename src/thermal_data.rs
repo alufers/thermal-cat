@@ -40,6 +40,12 @@ impl ThermalData {
 
     #[inline(always)]
     pub fn temperature_at(&self, x: usize, y: usize) -> Temp {
+        if x >= self.width {
+            panic!("x out of bounds ({} >= {})", x, self.width);
+        }
+        if y >= self.height {
+            panic!("y out of bounds ({} >= {})", y, self.height);
+        }
         self.data[y * self.width + x]
     }
 

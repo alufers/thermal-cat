@@ -25,8 +25,9 @@ pub struct ThermalDisplayPane {
     external_zoom_factor: f64,
     external_zoom_factor_changed: bool,
 
-    // Uuid of the gizmo which currently has its context menu open
-    gizmo_context_menu_uuid: Option<uuid::Uuid>,
+    // Uuid of the gizmo which was right clicked
+    right_clicked_gizmo_uuid: Option<uuid::Uuid>,
+    dragged_gizmo_uuid: Option<uuid::Uuid>,
 
     maximized: bool,
 }
@@ -43,7 +44,8 @@ impl ThermalDisplayPane {
             external_zoom_factor_changed: false,
             maximized: false,
 
-            gizmo_context_menu_uuid: None,
+            right_clicked_gizmo_uuid: None,
+            dragged_gizmo_uuid: None,
         }
     }
 
@@ -223,6 +225,7 @@ impl Pane for ThermalDisplayPane {
                                 )
                             }
 
+                            // Show the actual thermal image
                             plot_ui.image(PlotImage::new(
                                 texture,
                                 PlotPoint::new(img_size.0 as f64 / 2.0, img_size.1 as f64 / 2.0),
@@ -230,7 +233,8 @@ impl Pane for ThermalDisplayPane {
                             ));
 
                             let temp_unit = global_state.preferred_temperature_unit();
-
+                            
+                            // Finds the gizmo under a given screen position
                             let mut get_gizmo_under_screen_pos = |screen_pos_to_check: Pos2| {
                                 global_state
                                     .thermal_capturer_settings
@@ -254,7 +258,7 @@ impl Pane for ThermalDisplayPane {
 
                             let mut hovered_gizmo = None;
 
-                            let mut interact_gizmo = None;
+                            let mut interact_gizmo_uuid = None;
 
                             // check if any gizmo was hovered
                             if plot_ui.response().hovered() {
@@ -269,7 +273,7 @@ impl Pane for ThermalDisplayPane {
                                 .ctx()
                                 .input(|inp: &egui::InputState| inp.pointer.interact_pos())
                             {
-                                interact_gizmo = get_gizmo_under_screen_pos(pointer_pos);
+                                interact_gizmo_uuid = get_gizmo_under_screen_pos(pointer_pos);
                             }
 
                             global_state
@@ -369,7 +373,7 @@ impl Pane for ThermalDisplayPane {
                                 .response()
                                 .clicked_by(egui::PointerButton::Secondary)
                             {
-                                self.gizmo_context_menu_uuid = interact_gizmo;
+                                self.right_clicked_gizmo_uuid = interact_gizmo_uuid;
                             }
 
                             // handle zooming (with the scroll wheel, or touchpad gestures)
@@ -414,6 +418,55 @@ impl Pane for ThermalDisplayPane {
                                 );
                                 plot_ui.translate_bounds(plot_transform * delta);
                             }
+
+                            if plot_ui
+                                .response()
+                                .drag_started_by(egui::PointerButton::Primary)
+                            {
+                                if let Some(interacted_gizmo_uuid) = interact_gizmo_uuid {
+                                    self.dragged_gizmo_uuid = Some(interacted_gizmo_uuid);
+                                }
+                            }
+
+                            if plot_ui
+                                .response()
+                                .drag_stopped_by(egui::PointerButton::Primary)
+                            {
+                                self.dragged_gizmo_uuid = None;
+                            }
+
+                            if plot_ui.response().dragged_by(egui::PointerButton::Primary) {
+                                if let Some(dragged_gizmo_uuid) = self.dragged_gizmo_uuid {
+                                    let interacted_gizmo = global_state
+                                        .thermal_capturer_settings
+                                        .gizmo
+                                        .children_mut()
+                                        .unwrap()
+                                        .iter_mut()
+                                        .find(|gizmo| gizmo.uuid == dragged_gizmo_uuid);
+
+                                    if let Some(interacted_gizmo) = interacted_gizmo {
+                                        let pos = plot_ui.pointer_coordinate().unwrap();
+                                        interacted_gizmo.kind = GizmoKind::TempAt {
+                                            pos: ThermalDataPos::new(
+                                                pos.x.max(0.0).min((img_size.0 - 1) as f64)
+                                                    as usize,
+                                                img_size.1
+                                                    - pos.y.max(0.0).min((img_size.1 - 1) as f64)
+                                                        as usize,
+                                            ),
+                                        };
+
+                                        let settings_clone =
+                                            global_state.thermal_capturer_settings.clone();
+                                        if let Some(thermal_capturer) =
+                                            global_state.thermal_capturer_inst.as_mut()
+                                        {
+                                            thermal_capturer.set_settings(settings_clone);
+                                        }
+                                    }
+                                }
+                            }
                         });
 
                     // update external_zoom_factor so that the slider is in sync with the plot zoom
@@ -421,7 +474,7 @@ impl Pane for ThermalDisplayPane {
                         / plot_response.transform.bounds().width())
                     .max(img_size.1 as f64 / plot_response.transform.bounds().height());
 
-                    if let Some(context_emnu_gizmo_uuid) = self.gizmo_context_menu_uuid {
+                    if let Some(context_emnu_gizmo_uuid) = self.right_clicked_gizmo_uuid {
                         let gizmo = global_state
                             .thermal_capturer_settings
                             .gizmo
@@ -468,7 +521,7 @@ impl Pane for ThermalDisplayPane {
                                 });
                             }
                             None => {
-                                self.gizmo_context_menu_uuid = None;
+                                self.right_clicked_gizmo_uuid = None;
                             }
                         }
                     }

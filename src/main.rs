@@ -182,6 +182,8 @@ impl Default for ThermalViewerApp {
                 ]),
                 dynamic_range_curve: DynamicRangeCurve::default(),
                 recorders: vec![],
+                ambient: Temp::from_unit(TemperatureUnit::Celsius, 20.0),
+				emissivity: 1.0,
             },
             last_thermal_capturer_result: None,
             hotplug_detector: None,

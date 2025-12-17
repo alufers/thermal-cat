@@ -1,6 +1,9 @@
 use std::hash::{Hash, Hasher};
 
-use eframe::epaint::{Color32, ColorImage};
+use eframe::{
+    egui::Vec2,
+    epaint::{Color32, ColorImage},
+};
 
 use once_cell::sync::Lazy;
 use uuid::{uuid, Uuid};
@@ -129,6 +132,7 @@ impl ThermalGradient {
 
         ColorImage {
             pixels,
+            source_size: Vec2::new(width as f32, height as f32),
             size: [width, height],
         }
     }

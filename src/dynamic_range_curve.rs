@@ -305,7 +305,7 @@ pub fn dynamic_curve_editor(
                     [x as f64, curve.get_value(x) as f64]
                 })
                 .collect();
-            plot_ui.line(Line::new(line_points));
+            plot_ui.line(Line::new("curve", line_points));
 
             // determine hovered point
             let hover_dist: f32 = (1.0 / plot_ui.transform().dpos_dvalue_x().abs() * 20.0) as f32;
@@ -394,19 +394,22 @@ pub fn dynamic_curve_editor(
                 };
                 if is_dragged {
                     plot_ui.points(
-                        Points::new(vec![[p.x() as f64, p.y() as f64]])
-                            .shape(match p {
-                                CurvePoint::Sharp(_, _) => MarkerShape::Diamond,
-                                CurvePoint::Smooth(_, _) => MarkerShape::Circle,
-                            })
-                            .color(plot_ui.ctx().style().visuals.selection.bg_fill)
-                            .filled(true)
-                            .radius(5.0),
+                        Points::new(
+                            "dynamic range dragged points",
+                            vec![[p.x() as f64, p.y() as f64]],
+                        )
+                        .shape(match p {
+                            CurvePoint::Sharp(_, _) => MarkerShape::Diamond,
+                            CurvePoint::Smooth(_, _) => MarkerShape::Circle,
+                        })
+                        .color(plot_ui.ctx().style().visuals.selection.bg_fill)
+                        .filled(true)
+                        .radius(5.0),
                     );
                 }
 
                 plot_ui.points(
-                    Points::new(vec![[p.x() as f64, p.y() as f64]])
+                    Points::new("dynamic range points", vec![[p.x() as f64, p.y() as f64]])
                         .shape(match p {
                             CurvePoint::Sharp(_, _) => MarkerShape::Diamond,
                             CurvePoint::Smooth(_, _) => MarkerShape::Circle,
@@ -420,6 +423,7 @@ pub fn dynamic_curve_editor(
             // draw reference gradient
 
             plot_ui.image(PlotImage::new(
+                "reference gradient",
                 state
                     .ref_gradient_tex
                     .as_ref()

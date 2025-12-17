@@ -121,7 +121,7 @@ impl Pane for ChartPane {
                             ]);
                         },
                     );
-                    let line = Line::new(PlotPoints::new(points))
+                    let line = Line::new(gizmo.name.clone(), PlotPoints::new(points))
                         .color(gizmo.color)
                         .name(gizmo.name.clone());
                     plot_ui.line(line);

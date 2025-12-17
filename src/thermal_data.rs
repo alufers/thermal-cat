@@ -51,7 +51,7 @@ impl ThermalData {
 
     #[inline(always)]
     pub fn map_to_image<F: Fn(Temp) -> Color32>(&self, callback: F) -> ColorImage {
-        let mut img = ColorImage::new([self.width, self.height], Color32::BLACK);
+        let mut img = ColorImage::filled([self.width, self.height], Color32::BLACK);
         for (i, pixel) in img.pixels.iter_mut().enumerate() {
             let x = i % self.width;
             let y = i / self.width;

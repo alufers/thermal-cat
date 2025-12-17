@@ -98,7 +98,7 @@ impl Pane for PerformanceStatsPane {
                     .show_background(false)
                     .show(ui, |ui| {
                         ui.hline(
-                            HLine::new(reported_fps)
+                            HLine::new("Reported fps", reported_fps)
                                 .color(egui::Color32::from_rgb(200, 200, 200))
                                 .width(2.0),
                         );
@@ -109,7 +109,7 @@ impl Pane for PerformanceStatsPane {
                             .map(|[x, y]| [x - curr_time_sec, *y])
                             .collect::<Vec<[f64; 2]>>();
 
-                        let line = Line::new(adjusted_data)
+                        let line = Line::new("FPS", adjusted_data)
                             .color(egui::Color32::from_rgb(0, 255, 0))
                             .name("FPS");
                         ui.line(line);

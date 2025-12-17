@@ -227,13 +227,14 @@ impl Pane for ThermalDisplayPane {
 
                             // Show the actual thermal image
                             plot_ui.image(PlotImage::new(
+                                "thermal image",
                                 texture,
                                 PlotPoint::new(img_size.0 as f64 / 2.0, img_size.1 as f64 / 2.0),
                                 Vec2::new(img_size.0 as f32, img_size.1 as f32),
                             ));
 
                             let temp_unit = global_state.preferred_temperature_unit();
-                            
+
                             // Finds the gizmo under a given screen position
                             let mut get_gizmo_under_screen_pos = |screen_pos_to_check: Pos2| {
                                 global_state
@@ -301,7 +302,7 @@ impl Pane for ThermalDisplayPane {
                                         };
 
                                         plot_ui.points(
-                                            Points::new(vec![[x, y]])
+                                            Points::new(c.name.clone(), vec![[x, y]])
                                                 .shape(MarkerShape::Circle)
                                                 .radius(POINT_GIZMO_SIZE)
                                                 .filled(true)
@@ -311,14 +312,14 @@ impl Pane for ThermalDisplayPane {
                                                 ),
                                         );
                                         plot_ui.points(
-                                            Points::new(vec![[x, y]])
+                                            Points::new(c.name.clone(), vec![[x, y]])
                                                 .shape(MarkerShape::Circle)
                                                 .radius(POINT_GIZMO_SIZE * 0.66)
                                                 .filled(false)
                                                 .color(Color32::WHITE),
                                         );
                                         plot_ui.points(
-                                            Points::new(vec![[x, y]])
+                                            Points::new(c.name.clone(), vec![[x, y]])
                                                 .shape(MarkerShape::Plus)
                                                 .radius(POINT_GIZMO_SIZE)
                                                 .color(c.color),
@@ -327,6 +328,7 @@ impl Pane for ThermalDisplayPane {
                                         if c.show_temperature_label {
                                             plot_ui.text(
                                                 Text::new(
+                                                    c.name.clone(),
                                                     PlotPoint::new(x + 4.0, y),
                                                     RichText::new(format!(
                                                         "{:.1} {}",

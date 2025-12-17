@@ -186,7 +186,7 @@ pub fn color_icon_rgb(ui: &mut Ui, icon: impl Widget, rgb: &mut Color32, alpha: 
         if !button_response.clicked()
             && (ui.input(|i| i.key_pressed(Key::Escape)) || area_response.clicked_elsewhere())
         {
-            ui.memory_mut(|mem| mem.close_popup());
+            ui.memory_mut(|mem| mem.close_popup(popup_id));
         }
     }
 

@@ -183,7 +183,7 @@ impl Default for ThermalViewerApp {
                 dynamic_range_curve: DynamicRangeCurve::default(),
                 recorders: vec![],
                 ambient: Temp::from_unit(TemperatureUnit::Celsius, 20.0),
-				emissivity: 1.0,
+                emissivity: 1.0,
             },
             last_thermal_capturer_result: None,
             hotplug_detector: None,
@@ -295,7 +295,7 @@ impl eframe::App for ThermalViewerApp {
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
+            egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Preferences").clicked() {
                         // TODO: forbid opening multiple user preferences windows

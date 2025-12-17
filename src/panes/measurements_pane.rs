@@ -4,7 +4,7 @@ use eframe::{
     egui::{
         self,
         color_picker::{color_picker_color32, Alpha},
-        Area, Frame, Grid, Image, ImageButton, Key, Order, Response, TextEdit, Ui, Widget,
+        Area, Frame, Grid, Image, Key, Order, Response, TextEdit, Ui, Widget,
     },
     epaint::Color32,
 };
@@ -70,7 +70,7 @@ impl Pane for MeasurementsPane {
 
                         color_icon_rgb(
                             ui,
-                            ImageButton::new(icon.tint(gizmo.color)).frame(false),
+                            egui::Button::image(icon.tint(gizmo.color)).frame(false),
                             &mut gizmo.color,
                             Alpha::Opaque,
                         );
@@ -104,7 +104,7 @@ impl Pane for MeasurementsPane {
                             _ => {
                                 if ui
                                     .add(
-                                        ImageButton::new(
+                                        egui::Button::image(
                                             Image::new(egui::include_image!("../icons/trash.svg"))
                                                 .tint(
                                                     ui.style()
@@ -126,8 +126,11 @@ impl Pane for MeasurementsPane {
 
                         if ui
                             .add(
-                                ImageButton::new(
-                                    Image::new(egui::include_image!("../icons/crosshair_center.svg")).tint(
+                                egui::Button::image(
+                                    Image::new(egui::include_image!(
+                                        "../icons/crosshair_center.svg"
+                                    ))
+                                    .tint(
                                         if gizmo.show_temperature_label {
                                             ui.style().visuals.widgets.active.fg_stroke.color
                                         } else {

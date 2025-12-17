@@ -27,7 +27,7 @@ impl ImageFormat {
     }
 
     pub fn egui_combo_box(ui: &mut Ui, id_source: impl Hash, value: &mut Self, width: f32) {
-        ComboBox::from_id_source(id_source)
+        ComboBox::from_id_salt(id_source)
             .selected_text(value.name())
             .width(width)
             .show_ui(ui, |ui| {
@@ -64,7 +64,7 @@ impl VideoFormat {
     }
 
     pub fn egui_combo_box(ui: &mut Ui, id_source: impl Hash, value: &mut Self, width: f32) {
-        ComboBox::from_id_source(id_source)
+        ComboBox::from_id_salt(id_source)
             .selected_text(value.name())
             .width(width)
             .show_ui(ui, |ui| {

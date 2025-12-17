@@ -58,13 +58,13 @@ pub fn emissivity_edit_field(ui: &mut Ui, value: &mut f32) -> Response {
     *value = value.clamp(0.0, 1.0);
 
     // the actual UI widget
-    let mut v = *value;          // copy, because DragValue requires mutable reference
+    let mut v = *value; // copy, because DragValue requires mutable reference
     let resp = ui.add(
         DragValue::new(&mut v)
-            .speed(0.01)           // change step (adjust to your taste)
-            .min_decimals(2)       // show two decimals by default
+            .speed(0.01) // change step (adjust to your taste)
+            .min_decimals(2) // show two decimals by default
             .max_decimals(2)
-            .clamp_range(0.0..=1.0) // <-- this guarantees value stays in range
+            .range(0.0..=1.0), // <-- this guarantees value stays in range
     );
 
     // write back the possibly new value

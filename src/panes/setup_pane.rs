@@ -14,7 +14,9 @@ use crate::dynamic_range_curve::dynamic_curve_editor;
 use crate::gradient_selector_widget::GradientSelectorView;
 use crate::pane_dispatcher::Pane;
 
-use crate::temperature_edit_field::{temperature_edit_field,temperature_range_edit_field, emissivity_edit_field};
+use crate::temperature_edit_field::{
+    emissivity_edit_field, temperature_edit_field, temperature_range_edit_field,
+};
 use crate::thermal_capturer::ThermalCapturer;
 use crate::types::image_rotation::ImageRotation;
 use crate::AppGlobalState;
@@ -70,7 +72,7 @@ impl SetupPane {
             .selected_camera_info()
             .and_then(|i| i.adapter.as_ref())
             .context("No camera selected")?;
-        
+
         let cloned_ctx = ctx.clone();
         let cloned_adapter = adapter.clone();
 
@@ -275,36 +277,30 @@ impl Pane for SetupPane {
             .show(ui, |ui| {
                 ui.label("Ambient");
                 ui.label("Emissivity");
-            ui.end_row();
-			if temperature_edit_field(
-				ui,
-				global_state.preferred_temperature_unit(),
-				&mut global_state.thermal_capturer_settings.ambient,
-			)
-			.changed()
-			{
-				let settings_clone = global_state.thermal_capturer_settings.clone();
-				if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
-					thermal_capturer.set_settings(settings_clone);
-				}
-			}
-			if emissivity_edit_field(
-				ui,
-				&mut global_state.thermal_capturer_settings.emissivity,
-			)
-			.changed()
-			{
-				let settings_clone = global_state.thermal_capturer_settings.clone();
-				if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
-					thermal_capturer.set_settings(settings_clone);
-				}
-			}
-            ui.end_row();
-		});
-			
-        
-        
-        
+                ui.end_row();
+                if temperature_edit_field(
+                    ui,
+                    global_state.preferred_temperature_unit(),
+                    &mut global_state.thermal_capturer_settings.ambient,
+                )
+                .changed()
+                {
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.set_settings(settings_clone);
+                    }
+                }
+                if emissivity_edit_field(ui, &mut global_state.thermal_capturer_settings.emissivity)
+                    .changed()
+                {
+                    let settings_clone = global_state.thermal_capturer_settings.clone();
+                    if let Some(thermal_capturer) = global_state.thermal_capturer_inst.as_mut() {
+                        thermal_capturer.set_settings(settings_clone);
+                    }
+                }
+                ui.end_row();
+            });
+
         ui.separator();
 
         if ui
@@ -375,7 +371,7 @@ impl Pane for SetupPane {
         };
 
         CollapsingHeader::new(curve_heading)
-            .id_source("curve_editor_header")
+            .id_salt("curve_editor_header")
             .show(ui, |ui| {
                 let manual_range = global_state.thermal_capturer_settings.manual_range;
                 let curr_range = global_state

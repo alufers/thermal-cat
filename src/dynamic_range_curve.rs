@@ -1,7 +1,7 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use eframe::{
-    egui::{self, Button, CursorIcon, Id, Image, ImageButton, Layout, TextureOptions, Ui},
+    egui::{self, Button, CursorIcon, Id, Image, Layout, TextureOptions, Ui},
     emath::{Align, Vec2b},
     epaint::Vec2,
 };
@@ -236,7 +236,7 @@ pub fn dynamic_curve_editor(
             if ui
                 .add_enabled(
                     !curve.is_default(),
-                    ImageButton::new(
+                    egui::Button::image(
                         Image::new(egui::include_image!("./icons/rotate-ccw.svg")).max_height(16.0),
                     ),
                 )

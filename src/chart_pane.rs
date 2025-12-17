@@ -52,7 +52,7 @@ impl Pane for ChartPane {
 
         let unit_suffix = global_state.preferred_temperature_unit().suffix();
         let unit_suffix_clone = unit_suffix.clone(); // TODO: fixme
-        egui::menu::bar(ui, |ui| {
+        egui::MenuBar::new().ui(ui, |ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                 Self::POSSIBLE_DURATIONS.iter().for_each(|&duration| {
                     if ui

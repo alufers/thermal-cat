@@ -36,8 +36,10 @@ impl Pane for MeasurementsPane {
             .min_col_width(40.0)
             .show(ui, |ui| {
                 ui.label("");
-                ui.label("Value");
-                ui.label("Value");
+                ui.label("Temp.");
+                ui.label("Name");
+                ui.label("Delete");
+                ui.label("Enable/Disable");
                 ui.end_row();
 
                 let gizmo_results = global_state
@@ -125,7 +127,7 @@ impl Pane for MeasurementsPane {
                         if ui
                             .add(
                                 ImageButton::new(
-                                    Image::new(egui::include_image!("../icons/type.svg")).tint(
+                                    Image::new(egui::include_image!("../icons/crosshair_center.svg")).tint(
                                         if gizmo.show_temperature_label {
                                             ui.style().visuals.widgets.active.fg_stroke.color
                                         } else {
@@ -186,7 +188,7 @@ pub fn color_icon_rgb(ui: &mut Ui, icon: impl Widget, rgb: &mut Color32, alpha: 
         if !button_response.clicked()
             && (ui.input(|i| i.key_pressed(Key::Escape)) || area_response.clicked_elsewhere())
         {
-            ui.memory_mut(|mem| mem.close_popup());
+            ui.memory_mut(|mem| mem.close_popup(popup_id));
         }
     }
 

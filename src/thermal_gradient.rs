@@ -1,12 +1,37 @@
 use std::hash::{Hash, Hasher};
 
-use eframe::epaint::{Color32, ColorImage};
+use eframe::{
+    egui::Vec2,
+    epaint::{Color32, ColorImage},
+};
 
 use once_cell::sync::Lazy;
 use uuid::{uuid, Uuid};
 
 pub static THERMAL_GRADIENTS: Lazy<Vec<ThermalGradient>> = Lazy::new(|| {
     vec![
+        ThermalGradient::new(
+            uuid!("1d6233d1-7f8e-47c1-b092-0831cf587610"),
+            "gnuplot".to_string(),
+			vec![
+				ThermalGradientPoint::from_rgbv(0, 0, 0, 0.062500),
+				ThermalGradientPoint::from_rgbv(66, 0, 104, 0.125000),
+				ThermalGradientPoint::from_rgbv(93, 1, 190, 0.187500),
+				ThermalGradientPoint::from_rgbv(114, 2, 243, 0.250000),
+				ThermalGradientPoint::from_rgbv(132, 5, 254, 0.312500),
+				ThermalGradientPoint::from_rgbv(147, 9, 221, 0.375000),
+				ThermalGradientPoint::from_rgbv(161, 16, 150, 0.437500),
+				ThermalGradientPoint::from_rgbv(174, 26, 53, 0.500000),
+				ThermalGradientPoint::from_rgbv(186, 39, 0, 0.562500),
+				ThermalGradientPoint::from_rgbv(198, 55, 0, 0.625000),
+				ThermalGradientPoint::from_rgbv(208, 76, 0, 0.687500),
+				ThermalGradientPoint::from_rgbv(218, 101, 0, 0.750000),
+				ThermalGradientPoint::from_rgbv(228, 131, 0, 0.812500),
+				ThermalGradientPoint::from_rgbv(237, 166, 0, 0.875000),
+				ThermalGradientPoint::from_rgbv(246, 207, 0, 0.937500),
+				ThermalGradientPoint::from_rgbv(255, 255, 0, 1.000000),
+            ],
+        ),
         ThermalGradient::new(
             uuid!("1d6233d0-7f8e-47c1-b092-0831cf587610"),
             "Cold-warm".to_string(),
@@ -129,6 +154,7 @@ impl ThermalGradient {
 
         ColorImage {
             pixels,
+            source_size: Vec2::new(width as f32, height as f32),
             size: [width, height],
         }
     }

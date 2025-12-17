@@ -15,7 +15,7 @@ use crate::{
     dynamic_range_curve::DynamicRangeCurve,
     gizmos::{Gizmo, GizmoKind, GizmoResult},
     recorders::recorder::{Recorder, RecorderState, RecorderStreamParams},
-    temperature::{Temp, TempRange},
+    temperature::{Temp, TempRange, TemperatureUnit},
     thermal_data::ThermalDataHistogram,
     thermal_gradient::ThermalGradient,
     types::image_rotation::ImageRotation,
@@ -41,6 +41,11 @@ pub struct ThermalCapturerSettings {
     pub gizmo: Gizmo,
     pub dynamic_range_curve: DynamicRangeCurve,
     pub recorders: Vec<Arc<Mutex<dyn Recorder>>>,
+    
+    /// Ambient temperature (in Kelvin) – used in the emissivity formula.
+    pub ambient: Temp,
+    /// Emissivity of the target (0 .. 1). 1 = black‑body, < 1 = real object.
+    pub emissivity: f32,
 }
 
 impl ThermalCapturerSettings {
@@ -125,7 +130,10 @@ impl ThermalCapturer {
                 let thermal_data = ctx
                     .adapter
                     .capture_thermal_data(&mut ctx.camera)?
+                    .corrected(ctx.settings.ambient.to_unit(TemperatureUnit::Kelvin), ctx.settings.emissivity)
                     .rotated(ctx.settings.rotation);
+                    
+                    
                 let capture_time = std::time::Instant::now();
 
                 let (mintemp_pos, maxtemp_pos) = thermal_data.get_min_max_pos();

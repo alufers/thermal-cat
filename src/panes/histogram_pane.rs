@@ -44,6 +44,7 @@ impl Pane for HistogramPane {
         }
 
         let chart = BarChart::new(
+            "Histogram",
             temperature_points
                 .iter()
                 .map(|p| {
@@ -76,7 +77,7 @@ impl Pane for HistogramPane {
                 global_state.preferred_temperature_unit().suffix()
             ))
             .include_y(0.0)
-            .include_y(30.0)
+            .include_y(10.0)
             .y_axis_formatter(|grid_mark, _range| format!("{:.0}%", grid_mark.value))
             .x_axis_formatter(move |grid_mark, _range| {
                 format!("{:.0} {}", grid_mark.value, unit_suffix)
@@ -86,6 +87,7 @@ impl Pane for HistogramPane {
                 if !color_mapping_range.is_default() {
                     plot_ui.vline(
                         VLine::new(
+                            "Range line min",
                             color_mapping_range
                                 .min
                                 .to_unit(global_state.preferred_temperature_unit())
@@ -95,6 +97,7 @@ impl Pane for HistogramPane {
                     );
                     plot_ui.vline(
                         VLine::new(
+                            "Range line max",
                             color_mapping_range
                                 .max
                                 .to_unit(global_state.preferred_temperature_unit())

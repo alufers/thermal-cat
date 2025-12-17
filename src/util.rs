@@ -7,7 +7,7 @@ pub fn rotate_image(img: ColorImage, rotation: ImageRotation) -> ColorImage {
     if rotation == ImageRotation::None {
         return img;
     }
-    let mut new_img = ColorImage::new(
+    let mut new_img = ColorImage::filled(
         match rotation {
             ImageRotation::None => img.size,
             ImageRotation::Clockwise90 => [img.size[1], img.size[0]],

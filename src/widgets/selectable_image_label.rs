@@ -1,6 +1,8 @@
 use eframe::{
     egui::{
-        load::{TextureLoadResult, TexturePoll}, paint_texture_at, Image, ImageOptions, Rect, Response, Sense, Spinner, StrokeKind, TextStyle, Ui, Widget, WidgetInfo, WidgetType
+        load::{TextureLoadResult, TexturePoll},
+        paint_texture_at, Image, ImageOptions, Rect, Response, Sense, Spinner, StrokeKind,
+        TextStyle, Ui, Widget, WidgetInfo, WidgetType,
     },
     emath::Align2,
     epaint::Vec2,
@@ -59,7 +61,7 @@ impl<'a> Widget for SelectableImageLabel<'a> {
 
         let padded_size = image_size + 2.0 * button_padding;
         let (rect, response) = ui.allocate_exact_size(padded_size, Sense::click());
-        response.widget_info(|| WidgetInfo::new(WidgetType::ImageButton));
+        response.widget_info(|| WidgetInfo::new(WidgetType::Button));
 
         if ui.is_rect_visible(response.rect) {
             let _text_pos = ui

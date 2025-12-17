@@ -51,3 +51,23 @@ pub fn temperature_range_edit_field(
     }
     resp
 }
+/// Edit a single emissivity value in the range 0.0 .. 1.0.
+/// If the user drags past the bounds the value is clamped automatically.
+pub fn emissivity_edit_field(ui: &mut Ui, value: &mut f32) -> Response {
+    // make sure we start inside the bounds
+    *value = value.clamp(0.0, 1.0);
+
+    // the actual UI widget
+    let mut v = *value;          // copy, because DragValue requires mutable reference
+    let resp = ui.add(
+        DragValue::new(&mut v)
+            .speed(0.01)           // change step (adjust to your taste)
+            .min_decimals(2)       // show two decimals by default
+            .max_decimals(2)
+            .clamp_range(0.0..=1.0) // <-- this guarantees value stays in range
+    );
+
+    // write back the possibly new value
+    *value = v.clamp(0.0, 1.0);
+    resp
+}

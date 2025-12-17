@@ -23,7 +23,7 @@ pub trait CameraAdapter: Send + Sync {
     ///
     /// Get the USB PID/VID of the camera to match against
     ///
-    fn usb_vid_pid(&self) -> (u16, u16);
+    fn usb_vid_pids(&self) -> Vec<(u16, u16)>;
 
     ///
     /// Get requested format for the camera

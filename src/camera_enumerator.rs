@@ -86,7 +86,7 @@ pub fn enumerate_cameras() -> Result<Vec<EnumeratedCamera>, anyhow::Error> {
                     .iter()
                     .find(|adapter| {
                         if let Some((vid, pid)) = usb_vid_pid {
-                            adapter.usb_vid_pid() == (vid, pid)
+                            adapter.usb_vid_pids().contains(&(vid, pid))
                         } else {
                             false
                         }

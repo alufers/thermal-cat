@@ -4,7 +4,7 @@ use eframe::{
     egui::{
         self,
         color_picker::{color_picker_color32, Alpha},
-        Area, Frame, Grid, Image, Key, Order, Response, TextEdit, Ui, Widget,
+        Frame, Grid, Image, Popup, Response, TextEdit, Tooltip, Ui, Widget,
     },
     epaint::Color32,
 };
@@ -161,39 +161,23 @@ impl Pane for MeasurementsPane {
 }
 
 pub fn color_icon_rgb(ui: &mut Ui, icon: impl Widget, rgb: &mut Color32, alpha: Alpha) -> Response {
-    let popup_id = ui.auto_id_with("popup");
-    let _open = ui.memory(|mem| mem.is_popup_open(popup_id));
     let mut button_response = ui.add(icon);
-    if ui.style().explanation_tooltips {
-        button_response = button_response.on_hover_text("Click to edit color");
-    }
-
-    if button_response.clicked() {
-        ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-    }
+    Tooltip::for_enabled(&button_response).show(|ui| {
+        ui.label("Click to edit color");
+    });
 
     const COLOR_SLIDER_WIDTH: f32 = 210.0;
-    if ui.memory(|mem| mem.is_popup_open(popup_id)) {
-        let area_response = Area::new(popup_id)
-            .order(Order::Foreground)
-            .fixed_pos(button_response.rect.max)
-            .constrain(true)
-            .show(ui.ctx(), |ui| {
-                ui.spacing_mut().slider_width = COLOR_SLIDER_WIDTH;
-                Frame::popup(ui.style()).show(ui, |ui| {
-                    if color_picker_color32(ui, rgb, alpha) {
-                        button_response.mark_changed();
-                    }
-                });
-            })
-            .response;
 
-        if !button_response.clicked()
-            && (ui.input(|i| i.key_pressed(Key::Escape)) || area_response.clicked_elsewhere())
-        {
-            ui.memory_mut(|mem| mem.close_popup(popup_id));
-        }
-    }
-
+    Popup::from_toggle_button_response(&button_response)
+        .kind(egui::PopupKind::Popup)
+        .sense(egui::Sense::click())
+        .show(|ui| {
+            ui.spacing_mut().slider_width = COLOR_SLIDER_WIDTH;
+            Frame::popup(ui.style()).show(ui, |ui| {
+                if color_picker_color32(ui, rgb, alpha) {
+                    button_response.mark_changed();
+                }
+            });
+        });
     button_response
 }

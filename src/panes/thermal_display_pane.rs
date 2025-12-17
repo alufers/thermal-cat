@@ -326,6 +326,45 @@ impl Pane for ThermalDisplayPane {
                                         );
 
                                         if c.show_temperature_label {
+                                            let _color = c.color;
+
+                                            let x = result.pos.x as f64;
+
+                                            let y = img_size.1 as f64 - result.pos.y as f64;
+
+                                            let _size = 10.0;
+
+                                            let background_opacity =
+                                                if Some(c.uuid) == hovered_gizmo {
+                                                    0.5
+                                                } else {
+                                                    0.3
+                                                };
+
+                                            plot_ui.points(
+                                                Points::new(c.name.clone(), vec![[x, y]])
+                                                    .shape(MarkerShape::Circle)
+                                                    .radius(POINT_GIZMO_SIZE)
+                                                    .filled(true)
+                                                    .color(
+                                                        Color32::BLACK
+                                                            .gamma_multiply(background_opacity),
+                                                    ),
+                                            );
+                                            plot_ui.points(
+                                                Points::new(c.name.clone(), vec![[x, y]])
+                                                    .shape(MarkerShape::Circle)
+                                                    .radius(POINT_GIZMO_SIZE * 0.66)
+                                                    .filled(false)
+                                                    .color(Color32::WHITE),
+                                            );
+                                            plot_ui.points(
+                                                Points::new(c.name.clone(), vec![[x, y]])
+                                                    .shape(MarkerShape::Plus)
+                                                    .radius(POINT_GIZMO_SIZE)
+                                                    .color(c.color),
+                                            );
+
                                             plot_ui.text(
                                                 Text::new(
                                                     c.name.clone(),

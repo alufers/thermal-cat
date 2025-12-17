@@ -15,7 +15,7 @@ egui_dock = "0.16.0"
 egui_extras = { version = "0.31.1", features = ["svg", "image", "file"] }
 egui_plot = "0.31.0"
 env_logger = "0.11.8"
-ffmpeg-next = "7.1.0"
+ffmpeg-next = "8.0.0"
 image = { version = "0.25.6", features = ["jpeg", "png"] }
 imageproc = "0.25.0"
 log = "0.4.27"

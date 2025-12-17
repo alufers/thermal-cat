@@ -41,12 +41,12 @@ impl AutoDisplayRangeController {
             clipping_time_threshold: Duration::from_millis(900),
             anim_duration: Duration::from_millis(500),
 
-            new_range_max_headroom: Temp::new(3.0),
-            new_range_min_headroom: Temp::new(3.0),
+            new_range_max_headroom: Temp::new(1.0),
+            new_range_min_headroom: Temp::new(1.0),
 
-            shrink_range_max_headroom: Temp::new(8.0),
-            shrink_range_min_headroom: Temp::new(8.0),
-            min_separation: Temp::new(30.0),
+            shrink_range_max_headroom: Temp::new(2.0),
+            shrink_range_min_headroom: Temp::new(2.0),
+            min_separation: Temp::new(5.0),
         }
     }
 

@@ -1,7 +1,7 @@
 use eframe::epaint::{Color32, ColorImage};
 
 use crate::{
-    temperature::{Temp, TempRange},
+    temperature::{Temp, TempRange, TemperatureUnit},
     types::image_rotation::ImageRotation,
 };
 
@@ -84,6 +84,23 @@ impl ThermalData {
         (min_pos, max_pos)
     }
 
+    pub fn corrected(&self, ambient : f32, emissivity : f32) -> Self {
+		
+        let amb_pow4 = (1.0-emissivity)*ambient.powi(4);
+        let (width, height) = (self.width, self.height);
+        
+        let mut data: Vec<Temp> = vec![Temp::new(0.0); width * height];
+        for (i, pixel) in self.data.iter().enumerate() {
+			data[i]=Temp::from_unit(TemperatureUnit::Kelvin, (((*pixel).to_unit(TemperatureUnit::Kelvin).powi(4)-amb_pow4)/ emissivity.max(1e-6)).powf(0.25));
+		}
+
+        Self {
+            width,
+            height,
+            data,
+        }
+    }
+    
     pub fn rotated(&self, rotation: ImageRotation) -> Self {
         if rotation == ImageRotation::None {
             return self.clone();

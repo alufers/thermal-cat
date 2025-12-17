@@ -77,7 +77,7 @@ impl Pane for HistogramPane {
                 global_state.preferred_temperature_unit().suffix()
             ))
             .include_y(0.0)
-            .include_y(30.0)
+            .include_y(10.0)
             .y_axis_formatter(|grid_mark, _range| format!("{:.0}%", grid_mark.value))
             .x_axis_formatter(move |grid_mark, _range| {
                 format!("{:.0} {}", grid_mark.value, unit_suffix)

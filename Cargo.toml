@@ -17,7 +17,7 @@ egui_plot = "0.34.0"
 env_logger = "0.11.8"
 ffmpeg-next = "8.0.0"
 image = { version = "0.25.9", features = ["jpeg", "png"] }
-imageproc = "0.25.0"
+imageproc = "0.26.0"
 log = "0.4.29"
 nokhwa = { git = "https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-macos-usb-camera", features = [
     "input-v4l",

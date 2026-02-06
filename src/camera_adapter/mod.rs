@@ -6,9 +6,14 @@ use once_cell::sync::Lazy;
 use crate::thermal_data::ThermalData;
 
 pub mod infiray_p2_pro;
+pub mod thermal_master_p2;
 
-pub static CAMERA_ADAPTERS: Lazy<Vec<Arc<dyn CameraAdapter>>> =
-    Lazy::new(|| vec![Arc::new(infiray_p2_pro::InfirayP2ProAdapter {})]);
+pub static CAMERA_ADAPTERS: Lazy<Vec<Arc<dyn CameraAdapter>>> = Lazy::new(|| {
+    vec![
+        Arc::new(infiray_p2_pro::InfirayP2ProAdapter {}),
+        Arc::new(thermal_master_p2::ThermanlMasterP2ProAdapter {}),
+    ]
+});
 pub trait CameraAdapter: Send + Sync {
     ///
     /// Get friendly name of the camera model

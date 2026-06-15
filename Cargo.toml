@@ -15,14 +15,14 @@ egui_dock = "0.18.0"
 egui_extras = { version = "0.33.3", features = ["svg", "image", "file"] }
 egui_plot = "0.34.0"
 env_logger = "0.11.8"
-ffmpeg-next = "8.0.0"
+ffmpeg-next = "8.1.0"
 image = { version = "0.25.9", features = ["jpeg", "png"] }
 imageproc = "0.25.0"
 log = "0.4.29"
 nokhwa = { git = "https://github.com/alufers/nokhwa.git", branch = "fix/0.10.3-fix-macos-usb-camera", features = [
-    "input-v4l",
-    "input-native",
-    "output-threaded",
+  "input-v4l",
+  "input-native",
+  "output-threaded",
 ] }
 once_cell = "1.21.3"
 regex = "1.11.1"
@@ -40,9 +40,9 @@ features = ["wayland"]
 [dependencies.uuid]
 version = "1.16.0"
 features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+  "v4",                # Lets you generate random UUIDs
+  "fast-rng",          # Use a faster (but still sufficiently random) RNG
+  "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
 
 [package.metadata.bundle]

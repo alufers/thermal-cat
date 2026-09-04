@@ -60,6 +60,25 @@ mod widgets;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    let mut wgpu_options = eframe::egui_wgpu::WgpuConfiguration::default();
+    
+    use eframe::egui_wgpu::{WgpuSetup, WgpuSetupCreateNew};
+    use std::sync::Arc;
+
+    wgpu_options.wgpu_setup = WgpuSetup::CreateNew(WgpuSetupCreateNew {
+        device_descriptor: Arc::new(|adapter| {
+            // Use the limits directly from the adapter
+            let adapter_limits = adapter.limits();
+
+            eframe::wgpu::DeviceDescriptor {
+                label: Some("Thermal Cat Wgpu Device"),
+                required_features: eframe::wgpu::Features::default(),
+                required_limits: adapter_limits,
+                ..Default::default() 
+            }
+        }),
+        ..Default::default()
+    });
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([900.0, 600.0])
@@ -68,6 +87,7 @@ fn main() -> Result<(), eframe::Error> {
                     .unwrap(),
             ),
         renderer: eframe::Renderer::Wgpu,
+        wgpu_options,
 
         ..Default::default()
     };
